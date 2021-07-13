@@ -2,3 +2,8 @@ name = "QMCIntegrationInR"
 uuid = "8e2e8201-700b-4cac-ab9d-a78e856bea62"
 authors = ["Philippe Blondeel <philippe.blondeel@kuleuven.be>"]
 version = "0.1.0"
+
+[deps]
+DigitalNets = "c4cd57b1-0b05-4559-8e67-143ebd25faa9"
+LatticeRules = "73f95e8e-ec14-4e6a-8b18-0d2e271c4e55"
+MultilevelEstimators = "bc769cb7-f249-5bba-802a-80f19cb247ec"
