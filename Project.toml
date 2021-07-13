@@ -1,0 +1,4 @@
+name = "QMCIntegrationInR"
+uuid = "8e2e8201-700b-4cac-ab9d-a78e856bea62"
+authors = ["Philippe Blondeel <philippe.blondeel@kuleuven.be>"]
+version = "0.1.0"
