@@ -60,7 +60,10 @@ Sample_Multiplier=0
     soll=10000
 RequestedTolerance=RequestedTolerance_vec[idx]
 t=@elapsed begin
+    percentagePtInSmallBox=[]
 while l<=level
+
+
 
                 p_f=2^(N+l+Sample_Multiplier)
                 p_c=2^(N+l-1+Sample_Multiplier)
@@ -103,13 +106,8 @@ while l<=level
 
                         ct=1
                             for id=1:length(shiftLat[0:p_f_FOR_BOX])-1
-                #                box_fine=sqrt(log(p_f^2))
-                #                box_coarse=sqrt(log(p_c^2))
                                 box_fine=sqrt(2*2*log(p_f_FOR_BOX))
                                 box_coarse=sqrt(2*2*log(p_c_FOR_BOX))
-
-
-                            #    println("boxfine is ", box_fine)
 
                                 Matrix_f[:,id,Nshift]=map.(funTransform,shiftLat[id-1],box_fine)
 
@@ -128,12 +126,12 @@ while l<=level
 
                     Matrix_c=Matrix_c[:,1:Int64(minimum(sizeShift)),:]
                     nshifts_effective=minimum(sizeShift)
-
-                    println("Percentage of points in bigger box is ", (1-size(Matrix_c,2)/size(Matrix_f,2))*100, " %")
+                    pct=(1-size(Matrix_c,2)/size(Matrix_f,2))*100
+                    println("Percentage of points in smaller box is ",pct , " %")
                     println("box fine is ",-box_fine," ",box_fine)
                     println("box coarse is ",-box_coarse," ",box_coarse)
 
-
+                    append!(percentagePtInSmallBox,pct)
 
                 G_fine=mean(f(Matrix_f,gamma),dims=2)
             #    println(G_fine)
@@ -199,6 +197,10 @@ while l<=level
 
 
 end
+
+figure()
+plot(percentagePtInSmallBox,"-*")
+
 end
 println("Runtime is ",t," sec")
 println("******************************************************************************")
