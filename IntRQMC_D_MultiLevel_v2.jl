@@ -12,7 +12,15 @@ using PyPlot
 
 
 function main()
-    Random.seed!(12345) # Setting the seed
+    GC.gc()
+
+#QMCType="Lattice"
+QMCType="Sobol2"
+
+
+
+
+    #Random.seed!(12345) # Setting the seed
     #d = MultilevelEstimators.Normal()
     #d = MultilevelEstimators.TruncatedNormal(0.0,1.0,-2.0,2.0)
     funTransform=(x,y)->transform(MultilevelEstimators.TruncatedNormal(0,1,-y,y),x)
@@ -21,18 +29,19 @@ function main()
 f(x,gamma)=prod(1 .+ x .* gamma,dims=1)
 distrb=Distributions.Normal()
 
-b=-1:-0.5:-5
+b=-1:-0.5:-5.5
 RequestedTolerance_vec=10 .^ b
 RequestedTolerance_vec=vec(RequestedTolerance_vec)
 time_vec=zeros(length(RequestedTolerance_vec))
 err_vec=zeros(length(RequestedTolerance_vec))
-
+truncationError_vec=zeros(length(RequestedTolerance_vec))
+cubatureError_vec=zeros(length(RequestedTolerance_vec))
 
 
 idx=1
 while idx<=length(RequestedTolerance_vec)
 GC.gc()
-s=1
+s=4
 M=4
 N=2  #2^N start number of samples
 
@@ -72,9 +81,26 @@ while l<=level
                 a=1:1:s
                 gamma=1 ./ a .^2
 
-                Lattice=DigitalNet64_2(s)
+                if(QMCType=="Lattice")
+                    Lattice=LatticeRule(s)
+
+                elseif(QMCType=="Sobol2")
+                    Lattice=DigitalNet64(s)
+                end
+            #
                     for Nshift=1:M
-                       shiftLat=DigitalShiftedDigitalNets64(Lattice)
+
+                     if(QMCType=="Lattice")
+                         shiftLat=ShiftedLatticeRule(Lattice)
+
+                     elseif(QMCType=="Sobol2")
+                         shiftLat=DigitalShiftedDigitalNets64(Lattice)
+
+                     end
+
+
+
+
                         ct=1
                             for id=1:length(shiftLat[0:p_f_FOR_BOX])-1
                 #                box_fine=sqrt(log(p_f^2))
@@ -161,6 +187,11 @@ while l<=level
                         l=l+1
                     else
                         l=level+2
+                       truncationError_vec[idx]=truncationError
+                       cubatureError_vec[idx]=cubatureError
+
+
+
                     end
                 end
 
@@ -179,10 +210,24 @@ end
 
 figure()
 loglog(RequestedTolerance_vec,time_vec,"-*")
-loglog(RequestedTolerance_vec,RequestedTolerance_vec.^-1,"-*")
+title("Runtime in function of requested tolerance")
+xlabel("RMSE")
+ylabel("run time sec")
 figure()
 loglog(RequestedTolerance_vec,err_vec,"-*")
+println(time_vec)
+loglog(RequestedTolerance_vec,cubatureError_vec,"-*")
+loglog(RequestedTolerance_vec,abs.(truncationError_vec),"-*")
 
+str=string(QMCType, "\n" ,"s = " , s, "shift = ",M ," \n","Errors in function of requested RMSE")
+
+title(str)
+ylabel("Abs. error")
+xlabel("RMSE")
+legend(("abs. error on sol","cubature error","abs. trunction error"))
+println(truncationError_vec)
+println(cubatureError_vec)
+GC.gc()
 #println(sol)
 #println(sum(sol))
 #println(sol_uncor)
