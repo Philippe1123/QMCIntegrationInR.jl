@@ -37,13 +37,13 @@ err_vec=zeros(length(RequestedTolerance_vec))
 truncationError_vec=zeros(length(RequestedTolerance_vec))
 cubatureError_vec=zeros(length(RequestedTolerance_vec))
 
-
-idx=1
-while idx<=length(RequestedTolerance_vec)
-GC.gc()
 s=4
 M=4
 N=2  #2^N start number of samples
+idx=1
+while idx<=length(RequestedTolerance_vec)
+GC.gc()
+
 
 Matrx_std=zeros(length(N),1)
 ct=1
