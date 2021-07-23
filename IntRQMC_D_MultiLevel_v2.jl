@@ -14,8 +14,8 @@ using PyPlot
 function main()
     GC.gc()
 
-#QMCType="Lattice"
-QMCType="Sobol2"
+#QMCType="Lattice"  ##### Change this
+QMCType="Sobol2"  ##### Change this
 
 
 
@@ -36,6 +36,7 @@ time_vec=zeros(length(RequestedTolerance_vec))
 err_vec=zeros(length(RequestedTolerance_vec))
 truncationError_vec=zeros(length(RequestedTolerance_vec))
 cubatureError_vec=zeros(length(RequestedTolerance_vec))
+Nb_samples_vec=zeros(length(RequestedTolerance_vec))
 
 s=4
 M=4
@@ -67,7 +68,6 @@ while l<=level
 
                 p_f=2^(N+l+Sample_Multiplier)
                 p_c=2^(N+l-1+Sample_Multiplier)
-
 
                 p_f_FOR_BOX=2^(N+l)
                 p_c_FOR_BOX=2^(N+l-1)
@@ -187,19 +187,17 @@ while l<=level
                         l=level+2
                        truncationError_vec[idx]=truncationError
                        cubatureError_vec[idx]=cubatureError
-
-
-
                     end
                 end
 
 
 
+                Nb_samples_vec[idx]=Nb_samples_vec[idx]+p_f
 
 end
 
-figure()
-plot(percentagePtInSmallBox,"-*")
+#figure()
+#plot(percentagePtInSmallBox,"-*")
 
 end
 println("Runtime is ",t," sec")
@@ -212,7 +210,9 @@ end
 
 figure()
 loglog(RequestedTolerance_vec,time_vec,"-*")
-title("Runtime in function of requested tolerance")
+str=string(QMCType, "\n" ,"s = " , s, "shift = ",M ," \n","Runtime in function of requested tolerance")
+
+title(str)
 xlabel("RMSE")
 ylabel("run time sec")
 figure()
@@ -229,6 +229,18 @@ xlabel("RMSE")
 legend(("abs. error on sol","cubature error","abs. trunction error"))
 println(truncationError_vec)
 println(cubatureError_vec)
+
+
+figure()
+str=string(QMCType, "\n" ,"s = " , s, "shift = ",M ," \n","Samples")
+title(str)
+
+loglog(RequestedTolerance_vec,Nb_samples_vec,"-*")
+ylabel("Nb. Samples")
+xlabel("Requested RMSE")
+println(Nb_samples_vec)
+println(RequestedTolerance_vec)
+
 GC.gc()
 #println(sol)
 #println(sum(sol))
