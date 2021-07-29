@@ -15,9 +15,9 @@ nbPt= 2 .^ id
 nbPt=1:10000:2^20
 s=1
 
-Lattice=LatticeRule(s)
-DigitalNet=DigitalNet64(s)
-Digital32=DigitalNet32(s)
+Lattice=ShiftedLatticeRule(LatticeRule(s))
+DigitalNet=DigitalShiftedDigitalNets64(DigitalNet64(s))
+Digital32=DigitalShiftedDigitalNets32(DigitalNet32(s))
 time_lat=zeros(length(nbPt),1)
 time_net=zeros(length(nbPt),1)
 time_net32=zeros(length(nbPt),1)
@@ -52,11 +52,11 @@ plot(nbPt,time_net32,"-*")
 legend(("Lattice","DigitalNet interlace 2","DigitalNet"))
 xlabel("Nb. Points")
 ylabel("Time [sec]")
-title("Timings NO Shift")
+title("Timings Shifted QMC")
 
 figure()
 plot(nbPt,time_net32./time_lat,"-*")
-title("Timings Difference NO Shift")
+title("Timings Difference Shifted QMC")
 
 xlabel("Nb. Points")
 ylabel("Time [sec]")
