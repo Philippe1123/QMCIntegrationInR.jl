@@ -15,7 +15,7 @@ function main()
     #### Input parameters
     s = 2 # number of stochastic dimensions
     M = 16 # number of shifts
-    N0 = 2  #2^N start number of samples
+    N0 = 2  #2^N0 start number of samples
     b = -1:-0.5:-5.5
     requestedTolerances = 10 .^ b
 
@@ -83,9 +83,9 @@ function RunSimulation(s::Int64, M::Int64, N0::Int64, requestedTolerances::Vecto
         soll = 10000
 
         t = @elapsed begin
-        
+
             percentagePtInSmallBox = []
-            
+
             while ell <= maxLevel
 
                 pLargeBox = 2^(N0+ell)
@@ -187,7 +187,7 @@ function RunSimulation(s::Int64, M::Int64, N0::Int64, requestedTolerances::Vecto
             end # end of while l <= level
 
         end # end of @elapsed
-        
+
         println("sampleMultiplierLog2 is ", sampleMultiplierLog2)
         println("Runtime is ", t, " sec")
         println("******************************************************************************")
