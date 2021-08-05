@@ -1,11 +1,9 @@
-using Random, Distributions
 using DigitalNets
 using LatticeRules
+
 using PyPlot
 
-#using MultilevelEstimators
-#using LatticeRules: ShiftedLatticeRule
-
+using Statistics: mean, std
 using SpecialFunctions: erf, erfinv
 
 Φ⁻¹(x::T where {T<:Real}) = √2*erfinv(2*x-1)
@@ -13,202 +11,203 @@ using SpecialFunctions: erf, erfinv
 Φ(x::T where {T<:Real}) = 1/2*(1+erf(x/√2))
 
 function main()
-    #GC.gc()
 
     #### Input parameters
     s = 2 # number of stochastic dimensions
-    M = 4 # number of shifts
-    N = 2  #2^N start number of samples
+    M = 16 # number of shifts
+    N0 = 2  #2^N start number of samples
     b = -1:-0.5:-5.5
-    RequestedTolerance_vec = 10 .^ b
-    QMCGenerator = DigitalNet64(s)
-    #QMCGenerator = LatticeRule(s)
-    ####
+    requestedTolerances = 10 .^ b
 
-    Data = RunSimulation(s, M, N, RequestedTolerance_vec, QMCGenerator)
+    #generator = DigitalNet64(s)
+    generator = LatticeRule(s)
+
+    Data = RunSimulation(s, M, N0, requestedTolerances, generator)
 
     plotter(Data)
 
 end # end of function main()
 
 
-function RunSimulation(s::Int64, M::Int64, N::Int64, RequestedTolerance_vec::Vector, QMCGenerator::Random.AbstractRNG)
+## Quick and dirty solution for the "isa" problem (needs to be fixed in a more decent matter)
+"""
+Create a randomized generator with a random shift or random digital shift for the passed in QMC generator.
+"""
+randomizedGenerator(latticeGenerator::LatticeRule) = ShiftedLatticeRule(latticeGenerator)
+randomizedGenerator(digitalnetGenerator::DigitalNet64) = DigitalShiftedDigitalNets64(digitalnetGenerator)
 
-    if QMCGenerator isa AbstractDigitalNets
-        fun_ShiftedQMCGenerator = (x) -> DigitalShiftedDigitalNets64(x)
-        if Int64.(DigitalNets.reversebits((QMCGenerator.C)[1,1])) == 1
-            println("Used point set is: Sobol_CS")
-            QMCType = "Sobol"
-        elseif Int64.(DigitalNets.reversebits((QMCGenerator.C)[1,1])) == 3
-            println("Used point set is: Sobol_CS_2")
-            QMCType = "Sobol3" ## FIXME?
-        elseif Int64.(DigitalNets.reversebits((QMCGenerator.C)[1,1])) == 7
-            println("Used point set is: Sobol_CS_3")
-            QMCType = "Sobol3"
-        end
-    elseif QMCGenerator isa AbstractLatticeRule
-        fun_ShiftedQMCGenerator = (x) -> ShiftedLatticeRule(x)
-        println("Lattice")
-        QMCType = "Lattice"
-    end
+## Quick and dirty solution for labeling the point set (needs to be fixed in a more decent matter)
+"""
+String label for the current generator, either Lattice or Sobol1, Sobol2, or Sobol3.
+"""
+labelThisGenerator(latticeGenerator::LatticeRule) = "Lattice"
+labelThisGenerator(digitalnetGenerator::DigitalNet64) = "Sobol$(Int32(round(sqrt(reversebits(digitalnetGenerator.C[1])))))"
 
-    #Random.seed!(12345) # Setting the seed
-    #funTransform = (x, y) -> transform(MultilevelEstimators.TruncatedNormal(0, 1, -y, y), x)
 
-    f(x, gamma) = prod(1 .+ x .* gamma, dims=1)
-    distrb = Distributions.Normal()
+"""
+    RunSimulation(s, M, N0, requestedTolerances, QMCGenerator)
 
-    RequestedTolerance_vec = vec(RequestedTolerance_vec)
-    time_vec = zeros(length(RequestedTolerance_vec))
-    err_vec = zeros(length(RequestedTolerance_vec))
-    truncationError_vec = zeros(length(RequestedTolerance_vec))
-    Real_truncationError_vec = zeros(length(RequestedTolerance_vec))
-    Real_cubatureError_vec = zeros(length(RequestedTolerance_vec))
+Run the algorithm for our test function in `s` dimensions with `M` shifts and a
+starting number of points `2^N0` for all the requested tolerances in
+`requestedTolerances` using the QMC point generator in `QMCGenerator`.
+"""
+function RunSimulation(s::Int64, M::Int64, N0::Int64, requestedTolerances::Vector, QMCGenerator::Union{DigitalNet64,LatticeRule})
 
-    cubatureError_vec = zeros(length(RequestedTolerance_vec))
-    Nb_samples_vec = zeros(length(RequestedTolerance_vec))
+    QMCType = labelThisGenerator(QMCGenerator)
 
-    idx = 1
-    while idx <= length(RequestedTolerance_vec)
-        GC.gc()
+    # This is our current integrand function, it should be an argument to this function... to be fixed
+    a = 1:1:s
+    gamma = 1 ./ a .^2
+    f(x) = prod(1 .+ x .* gamma, dims=1)
 
-        #Matrx_std=zeros(length(N),1)
-        ct = 1 # FIXME: there is a second ct variable down there in the loop over Nshift
+    timings = zeros(length(requestedTolerances))
+    trueErrors = zeros(length(requestedTolerances))
+    estimatedTruncationErrors = zeros(length(requestedTolerances))
+    estimatedCubatureErrors = zeros(length(requestedTolerances))
+    trueTruncationErrors = zeros(length(requestedTolerances))
+    trueCubatureErrors = zeros(length(requestedTolerances))
+    nbOfSamples = zeros(length(requestedTolerances))
 
-        level = 12
-        sol = zeros(level+1)
-        #sol_uncor=zeros(level+1)
-        box_fine = 0
-        box_coarse = 0
-        Sample_Multiplier = 0
-        l = 0
-        truncationError = 10000
-        cubatureError = 10000
+    maxLevel = 12
+
+    for (idx, requestedTolerance) in enumerate(requestedTolerances)
+
+        sol = zeros(maxLevel+1)
+        # why do these two variables need to be declared here? can't we rewrite the logic?
+        largeBoxBoundary = 0 # our large box is [-largeBox, largeBox]^d
+        smallBoxBoundary = 0 # our small box is [-smallBox, smallBox]^d
+        sampleMultiplierLog2 = 0
+        ell = 0
+        #truncationError = 10000
+        #cubatureError = 10000
         soll = 10000
-        RequestedTolerance = RequestedTolerance_vec[idx]
-        t = @elapsed begin
-            percentagePtInSmallBox = []
-            while l <= level
-                p_f = 2^(N+l+Sample_Multiplier)
-                p_c = 2^(N+l-1+Sample_Multiplier)
 
-                p_f_FOR_BOX = 2^(N+l)
-                p_c_FOR_BOX = 2^(N+l-1)
+        t = @elapsed begin
+        
+            percentagePtInSmallBox = []
+            
+            while ell <= maxLevel
+
+                pLargeBox = 2^(N0+ell)
+                pSmallBox = 2^(N0+ell-1)
+
+                numberOfPointsLargeBox = 2^(N0+ell+sampleMultiplierLog2)
+                #numberOfPointsSmallBox = 2^(N0+ell-1+sampleMultiplierLog2)
 
                 println("---------")
-                println("level ", l)
-                println("Samples fine ", p_f)
-                println("Samples coarse ", p_c)
+                println("level ", ell)
+                println("p for large box ", pLargeBox)
+                println("p for small box ", pSmallBox)
+                println("Samples for large box ", numberOfPointsLargeBox)
+                #println("Samples coarse ", numberOfPointsSmallBox)
 
+                pointsLargeBox = zeros(s, numberOfPointsLargeBox, M)
+                pointsSmallBox = zeros(s, numberOfPointsLargeBox, M)
+                nbOfPointsInSmallBoxPerShift = zeros(M)
 
-                Matrix_f = zeros(s,p_f,M)
-                Matrix_c = zeros(s,p_f,M)
-                sizeShift = zeros(M)
-                a = 1:1:s
-                gamma = 1 ./ a .^2
+                # We first generate *all* the points for all the shifts...
+                # This does not seem like a very good idea.
+                for shiftId = 1:M
 
+                    shiftedQMCGenerator = randomizedGenerator(QMCGenerator)
 
-                for Nshift = 1:M
+                    largeBoxBoundary = sqrt(2*2*log(pLargeBox))
+                    smallBoxBoundary = sqrt(2*2*log(pSmallBox))
 
-                    ShiftedQMCGenerator = fun_ShiftedQMCGenerator(QMCGenerator)
+                    ct = 0 # count the points which fall into the small box
+                    for id = 1:numberOfPointsLargeBox # Note: this said pLargeBox instead of numberOfPointsLargeBox
 
-                    ct = 0
-                    for id = 1:length(ShiftedQMCGenerator[0:p_f_FOR_BOX]) - 1
-                        box_fine = sqrt(2*2*log(p_f_FOR_BOX))
-                        box_coarse = sqrt(2*2*log(p_c_FOR_BOX))
+                        pointsLargeBox[:,id,shiftId] = map.(x -> Φ⁻¹(Φ(-largeBoxBoundary) + (Φ(largeBoxBoundary) - Φ(-largeBoxBoundary))*x), shiftedQMCGenerator[id-1])
 
-                        #Matrix_f[:,id,Nshift] = map.(funTransform, ShiftedQMCGenerator[id-1], box_fine)
-                        Matrix_f[:,id,Nshift] = map.(x -> Φ⁻¹(Φ(-box_fine) + (Φ(box_fine) - Φ(-box_fine))*x), ShiftedQMCGenerator[id-1])
-
-                        #cumsum = sum((Matrix_f[:,id,Nshift] .> box_coarse)  .| (Matrix_f[:,id,Nshift] .< -box_coarse))
-                        #if cumsum > 0
-                        if any((Matrix_f[:,id,Nshift] .> box_coarse)  .| (Matrix_f[:,id,Nshift] .< -box_coarse))
+                        if any((pointsLargeBox[:,id,shiftId] .> smallBoxBoundary)  .| (pointsLargeBox[:,id,shiftId] .< -smallBoxBoundary))
                             # point is not in the small box
                         else
                             # point is in the small box
                             ct = ct + 1
-                            Matrix_c[:,ct,Nshift] = Matrix_f[:,id,Nshift]
+                            pointsSmallBox[:,ct,shiftId] = pointsLargeBox[:,id,shiftId]
                         end
                     end
-                    sizeShift[Nshift] = ct
+
+                    nbOfPointsInSmallBoxPerShift[shiftId] = ct
+
                 end
 
-
-                nshifts_effective = minimum(sizeShift)
-                Matrix_c = Matrix_c[:,1:Int64(nshifts_effective),:] ## FIXME?
-                pct = (1 - size(Matrix_c,2)/size(Matrix_f,2)) * 100
-                println("Percentage of points in smaller box is ", pct, "%")
-                println("box fine is ", -box_fine, " ", box_fine)
-                println("box coarse is ", -box_coarse, " ", box_coarse)
+                nshiftsEffective = minimum(nbOfPointsInSmallBoxPerShift)
+                pointsSmallBox = pointsSmallBox[:,1:Int64(nshiftsEffective),:] ## FIXME?
+                pct = (1 - size(pointsSmallBox,2)/size(pointsLargeBox,2)) * 100
+                println("Percentage of points in smal box is ", pct, "%")
+                println("Large box is ", -largeBoxBoundary, " ", largeBoxBoundary)
+                println("Small box is ", -smallBoxBoundary, " ", smallBoxBoundary)
 
                 append!(percentagePtInSmallBox, pct)
 
-                # Matrix_f is s-by-N-by-M --f--> 1-by-N-by-M
-                G_fine = mean(f(Matrix_f, gamma), dims=2) # 1-by-1-by-M
-                corrfactor_fine = (cdf(distrb, box_fine) - cdf(distrb, -box_fine))^s
-                G_coarse = mean(f(Matrix_c, gamma), dims=2) # 1-by-1-by-M
-                corrfactor_coarse = (cdf(distrb, box_coarse) - cdf(distrb, -box_coarse))^s
-                diff = (G_fine .- G_coarse) * (corrfactor_fine - corrfactor_coarse)
+                # pointsLargeBox is s-by-N-by-M --f--> 1-by-N-by-M
+                G_fine = mean(f(pointsLargeBox), dims=2) # 1-by-1-by-M
+                corrfactor_fine = (Φ(largeBoxBoundary) - Φ(-largeBoxBoundary))^s
+                G_coarse = mean(f(pointsSmallBox), dims=2) # 1-by-1-by-M
+                corrfactor_coarse = (Φ(smallBoxBoundary) - Φ(-smallBoxBoundary))^s
+                diff = abs.(G_fine .- G_coarse) * (corrfactor_fine - corrfactor_coarse)
                 println("corrfactor big box ", corrfactor_fine)
                 println("corrfactor small box ", corrfactor_coarse)
                 println("corrfactor diff ", (corrfactor_fine - corrfactor_coarse))
 
                 QMc_Q = mean(diff, dims=3) # estimate for truncation error over shifts; problem of number of shifts
-                sol[l+1] = QMc_Q[1]
+                sol[ell+1] = QMc_Q[1]
 
                 #QMc_R = mean(G_fine * corrfactor_fine, dims=2) # = G_fine * corrfactor_fine
                 QMc_R = G_fine * corrfactor_fine
-                QMc_std = std(QMc_R) / sqrt(nshifts_effective) ## Not problem of number of shifts
+                QMc_std = std(QMc_R) / sqrt(nshiftsEffective) ## Not problem of number of shifts
 
                 cubatureError = QMc_std
-                truncationError = sol[l+1]
+                truncationError = sol[ell+1]
 
                 println("Cubature error is ", cubatureError)
-                println("Truncation error is ", sol[l+1])
+                println("Truncation error is ", sol[ell+1])
 
                 soll = mean(G_fine * corrfactor_fine, dims=3)[1]
                 println("Sol is ", soll)
                 println("abs error is ", abs(1-soll))
 
-                if cubatureError > 0.5 * RequestedTolerance || truncationError == 0
-                    Sample_Multiplier = Sample_Multiplier + 1
+                if cubatureError > 0.5 * requestedTolerance || truncationError == 0
+                    sampleMultiplierLog2 = sampleMultiplierLog2 + 1
                 else
-                    if abs(truncationError) > 0.5 * RequestedTolerance && truncationError !=0
-                        l = l + 1
+                    if abs(truncationError) > 0.5 * requestedTolerance && truncationError != 0
+                        ell = ell + 1
                     else
-                        l = level + 2
-                        truncationError_vec[idx] = truncationError
-                        cubatureError_vec[idx] = cubatureError
-                        Real_truncationError_vec[idx] = 1 - corrfactor_fine
-                        Real_cubatureError_vec[idx] = abs(corrfactor_fine - soll)
+                        ell = maxLevel + 2 # such that we stop the while loop
+                        estimatedTruncationErrors[idx] = truncationError
+                        estimatedCubatureErrors[idx] = cubatureError
+                        trueTruncationErrors[idx] = 1 - corrfactor_fine
+                        trueCubatureErrors[idx] = abs(corrfactor_fine - soll)
                     end
                 end
 
-                Nb_samples_vec[idx] = Nb_samples_vec[idx] + p_f
+                nbOfSamples[idx] = nbOfSamples[idx] + numberOfPointsLargeBox
 
-            end# end of for Nshift=1:M
+            end # end of while l <= level
 
-        end # end of    while l<=level
+        end # end of @elapsed
+        
+        println("sampleMultiplierLog2 is ", sampleMultiplierLog2)
         println("Runtime is ", t, " sec")
         println("******************************************************************************")
 
-        time_vec[idx] = t
-        err_vec[idx] = abs(1 - soll)
-        idx = idx + 1
-    end# end     while idx<=length(RequestedTolerance_vec)
+        timings[idx] = t
+        trueErrors[idx] = abs(1 - soll)
+    end # loop over requestedTolerances
 
     Data = Dict()
-    Data[1] = RequestedTolerance_vec
-    Data[2] = time_vec
-    Data[3] = err_vec
-    Data[4] = cubatureError_vec
-    Data[5] = Real_cubatureError_vec
-    Data[6] = truncationError_vec
-    Data[7] = Real_truncationError_vec
+    Data[1] = requestedTolerances
+    Data[2] = timings
+    Data[3] = trueErrors
+    Data[4] = estimatedCubatureErrors
+    Data[5] = trueCubatureErrors
+    Data[6] = estimatedTruncationErrors
+    Data[7] = trueTruncationErrors
     Data[8] = QMCType
     Data[9] = s
     Data[10] = M
-    Data[11] = Nb_samples_vec
+    Data[11] = nbOfSamples
 
     return Data
 end
@@ -217,50 +216,49 @@ end
 
 function plotter(Data::Dict)
 
-    RequestedTolerance_vec = Data[1]
-    time_vec = Data[2]
-    err_vec = Data[3]
-    cubatureError_vec = Data[4]
-    Real_cubatureError_vec = Data[5]
-    truncationError_vec = Data[6]
-    Real_truncationError_vec = Data[7]
+    requestedTolerances = Data[1]
+    timings = Data[2]
+    trueErrors = Data[3]
+    estimatedCubatureErrors = Data[4]
+    trueCubatureErrors = Data[5]
+    estimatedTruncationErrors = Data[6]
+    trueTruncationErrors = Data[7]
     QMCType = Data[8]
     s = Data[9]
     M = Data[10]
-    Nb_samples_vec = Data[11]
+    nbOfSamples = Data[11]
 
     figure()
-    loglog(RequestedTolerance_vec, time_vec, "-*")
-    str = string(QMCType, "\n", "s = ", s, "shift = ", M, " \n", "Runtime in function of requested tolerance")
+    loglog(requestedTolerances, timings, "-*")
+    str = string(QMCType, "\n", "s = ", s, " shift = ", M, " \n", "Runtime in function of requested tolerance")
     title(str)
     xlabel("RMSE")
     ylabel("run time sec")
 
     figure()
-    loglog(RequestedTolerance_vec, err_vec, "-k*")
-    println(time_vec)
-    loglog(RequestedTolerance_vec, abs.(cubatureError_vec), "-r*")
-    loglog(RequestedTolerance_vec, abs.(Real_cubatureError_vec), "--r*")
-    loglog(RequestedTolerance_vec, abs.(truncationError_vec), "-g*")
-    loglog(RequestedTolerance_vec, abs.(Real_truncationError_vec), "--g*")
-    str = string(QMCType, "\n", "s = ", s, "shift = ", M, " \n", "Errors in function of requested RMSE")
+    loglog(requestedTolerances, trueErrors, "-k*")
+    println(timings)
+    loglog(requestedTolerances, abs.(estimatedCubatureErrors), "-r*")
+    loglog(requestedTolerances, abs.(trueCubatureErrors), "--r*")
+    loglog(requestedTolerances, abs.(estimatedTruncationErrors), "-g*")
+    loglog(requestedTolerances, abs.(trueTruncationErrors), "--g*")
+    str = string(QMCType, "\n", "s = ", s, " shift = ", M, " \n", "Errors in function of requested RMSE")
     title(str)
     ylabel("Abs. error")
     xlabel("RMSE")
-    legend(("abs. error on sol", "cubature error", "real cubature error", "abs. trunc. error", "abs. real trunc. error"))
-    println(truncationError_vec)
-    println(cubatureError_vec)
+    legend(("true error", "est cubature error", "true cubature error", "est trunc error", "true trunc error"))
+    println(estimatedTruncationErrors)
+    println(estimatedCubatureErrors)
 
     figure()
-    str = string(QMCType, "\n", "s = ", s, "shift = ", M, " \n", "Samples")
+    str = string(QMCType, "\n", "s = ", s, " shift = ", M, " \n", "Samples")
     title(str)
-    loglog(RequestedTolerance_vec,Nb_samples_vec,"-*")
+    loglog(requestedTolerances,nbOfSamples,"-*")
     ylabel("Nb. Samples")
     xlabel("Requested RMSE")
-    println(Nb_samples_vec)
-    println(RequestedTolerance_vec)
+    println(nbOfSamples)
+    println(requestedTolerances)
 
-    #GC.gc()
 end
 
 main()
