@@ -6,4 +6,6 @@ version = "0.1.0"
 [deps]
 DigitalNets = "c4cd57b1-0b05-4559-8e67-143ebd25faa9"
 LatticeRules = "73f95e8e-ec14-4e6a-8b18-0d2e271c4e55"
-MultilevelEstimators = "bc769cb7-f249-5bba-802a-80f19cb247ec"
+PyPlot = "d330b81b-6aea-500a-939a-2ce795aea3ee"
+SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
