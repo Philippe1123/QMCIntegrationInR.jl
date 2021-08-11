@@ -16,10 +16,10 @@ function main()
     s = 2 # number of stochastic dimensions
     M = 16 # number of shifts
     N0 = 2  #2^N0 start number of samples
-    b = -1:-0.5:-5.5
+    b = -1:-0.5:-8
     requestedTolerances = 10 .^ b
 
-    #generator = DigitalNet64(s)
+    #generator = DigitalNet64InterlacedTwo(s)
     generator = LatticeRule(s)
 
     Data = RunSimulation(s, M, N0, requestedTolerances, generator)
