@@ -13,14 +13,14 @@ using SpecialFunctions: erf, erfinv
 function main()
 
     #### Input parameters
-    s = 2 # number of stochastic dimensions
+    s = 1 # number of stochastic dimensions
     M = 16 # number of shifts
     N0 = 2  #2^N0 start number of samples
-    b = -1:-0.5:-8
+    b = -1:-0.5:-5
     requestedTolerances = 10 .^ b
 
-    #generator = DigitalNet64InterlacedTwo(s)
-    generator = LatticeRule(s)
+    generator = DigitalNet64InterlacedTwo(s)
+#    generator = LatticeRule(s)
 
     Data = RunSimulation(s, M, N0, requestedTolerances, generator)
 
@@ -146,7 +146,8 @@ function RunSimulation(s::Int64, M::Int64, N0::Int64, requestedTolerances::Vecto
                 corrfactor_fine = (Φ(largeBoxBoundary) - Φ(-largeBoxBoundary))^s
                 G_coarse = mean(f(pointsSmallBox), dims=2) # 1-by-1-by-M
                 corrfactor_coarse = (Φ(smallBoxBoundary) - Φ(-smallBoxBoundary))^s
-                diff = abs.(G_fine .- G_coarse) * (corrfactor_fine - corrfactor_coarse)
+    #            diff = abs.(G_fine .- G_coarse) * (corrfactor_fine - corrfactor_coarse)
+                diff = abs.(G_fine .- G_coarse)
                 println("corrfactor big box ", corrfactor_fine)
                 println("corrfactor small box ", corrfactor_coarse)
                 println("corrfactor diff ", (corrfactor_fine - corrfactor_coarse))
@@ -164,7 +165,9 @@ function RunSimulation(s::Int64, M::Int64, N0::Int64, requestedTolerances::Vecto
                 println("Cubature error is ", cubatureError)
                 println("Truncation error is ", sol[ell+1])
 
-                soll = mean(G_fine * corrfactor_fine, dims=3)[1]
+#                soll = mean(G_fine * corrfactor_fine, dims=3)[1]
+                soll = mean(G_fine, dims=3)[1]
+
                 println("Sol is ", soll)
                 println("abs error is ", abs(1-soll))
 
