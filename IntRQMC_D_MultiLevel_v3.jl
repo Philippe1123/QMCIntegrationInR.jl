@@ -4,23 +4,25 @@ using LatticeRules
 using PyPlot
 
 using Statistics: mean, std
-using SpecialFunctions: erf, erfinv
+using SpecialFunctions: erf, erfinv, gamma, gamma_inc
 
 Φ⁻¹(x::T where {T<:Real}) = √2*erfinv(2*x-1)
 
 Φ(x::T where {T<:Real}) = 1/2*(1+erf(x/√2))
 
+analytical_sol(a::Real,s::Int64) = ((gamma(4/5)/(2^(1/5))-gamma(4/5)*gamma_inc(4/5,a^2/2,0)[2]/(2^(1/5)))*2/sqrt(2*pi)+(Φ(a) - Φ(-a)))^s
+
 function main()
 
     #### Input parameters
-    s = 2 # number of stochastic dimensions
+    s = 3 # number of stochastic dimensions
     M = 16 # number of shifts
     N0 = 2  #2^N0 start number of samples
-    b = -1:-0.5:-5
+    b = -1:-0.5:-8
     requestedTolerances = 10 .^ b
 
-#    generator = DigitalNet64InterlacedTwo(s)
-    generator = LatticeRule(s)
+    generator = DigitalNet64InterlacedTwo(s)
+#    generator = LatticeRule(s)
 
     Data = RunSimulation(s, M, N0, requestedTolerances, generator)
 
@@ -58,7 +60,8 @@ Create a randomized generator with a random shift or random digital shift for th
                 # This is our current integrand function, it should be an argument to this function... to be fixed
                 a = 1:1:s
                 gamma = 1 ./ a .^2
-                f(x) = prod(1 .+ x .* gamma, dims=1)
+#                f(x) = prod(1 .+ x .* gamma, dims=1)
+                f(x) = prod(1 .+ abs.(x) .^ 0.6, dims=1)
 
                 timings = zeros(length(requestedTolerances))
                 trueErrors = zeros(length(requestedTolerances))
@@ -75,7 +78,6 @@ Create a randomized generator with a random shift or random digital shift for th
                     sol = zeros(maxLevel+1)
                     # why do these two variables need to be declared here? can't we rewrite the logic?
                     largeBoxBoundary = 0 # our large box is [-largeBox, largeBox]^d
-                    sampleMultiplierLog2 = 0
                     ell = 0
                     #truncationError = 10000
                     #cubatureError = 10000
@@ -87,7 +89,8 @@ Create a randomized generator with a random shift or random digital shift for th
                         cubature_error = 1000
                         truncation_error = 1000
                         QMc_Q = 0
-
+                        corrfactor_fine = 0
+                        largeBoxBoundary = 0
 
                         while ell <= maxLevel
                             cubature_error = 1000
@@ -101,13 +104,13 @@ Create a randomized generator with a random shift or random digital shift for th
 
                             while cubature_error > 0.5 * requestedTolerance
 
-                                numberOfPointsLargeBox = 2^(N+ell+sampleMultiplierLog2)
+                                numberOfPointsLargeBox = 2^(N)
                                 pointsLargeBox = zeros(s, numberOfPointsLargeBox, M)
 
-                                println("---------")
-                                println("level ", ell)
-                                println("p for large box ", pLargeBox)
-                                println("Samples  ", N)
+                        #        println("---------")
+                        #        println("level ", ell)
+                        #        println("p for large box ", pLargeBox)
+                        #        println("Samples  ", numberOfPointsLargeBox)
 
                                 # We first generate *all* the points for all the shifts...
                                 # This does not seem like a very good idea.
@@ -127,7 +130,6 @@ Create a randomized generator with a random shift or random digital shift for th
                                 corrfactor_fine = (Φ(largeBoxBoundary) - Φ(-largeBoxBoundary))^s
 
                                 vector_of_solutions = abs.(G_fine) * (corrfactor_fine)
-                                println("corrfactor big box ", corrfactor_fine)
 
 
                                 QMc_Q = mean(vector_of_solutions, dims=3)
@@ -136,11 +138,13 @@ Create a randomized generator with a random shift or random digital shift for th
                                 QMc_R = G_fine * corrfactor_fine
                                 QMc_std = std(QMc_R) / sqrt(M)
 
+
+
                                 cubature_error = QMc_std
                                 N=N+1
 
                             end
-                            println("Cubature error is ", cubature_error)
+
 
                             if ell == 0
                                 solutions_per_level[ell+1] = QMc_Q[1]
@@ -148,11 +152,22 @@ Create a randomized generator with a random shift or random digital shift for th
                             else
                                 solutions_per_level[ell+1] = QMc_Q[1]
                                 truncation_error = abs(solutions_per_level[ell+1] - solutions_per_level[ell])
-                                println("Truncation error is ", truncation_error)
+
 
                                 if truncation_error > 0.5 * requestedTolerance
                                     ell = ell + 1
                                 else
+                                    println("For tolerance ", requestedTolerance)
+                                    println("Levels needed ", ell)
+                                    println("samples needed on finest level ", 2^N)
+                                    println("box is ", largeBoxBoundary)
+                                    println("exact solution on given box is ", analytical_sol(largeBoxBoundary,s))
+                                    println("solution is ", QMc_Q[1])
+                                    println("exact solution  is ", analytical_sol(1000,s))
+                                    println("Estimated Cubature error is ", cubature_error)
+                                    println("Exact Cubature error is ", abs(analytical_sol(largeBoxBoundary,s)-QMc_Q[1]))
+                                    println("Estimated Truncation error is ", truncation_error)
+                                    println("Exact Truncation error is ", abs(analytical_sol(1000,s)-analytical_sol(largeBoxBoundary,s)))
 
                                     ell = maxLevel + 1
 
