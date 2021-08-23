@@ -10,15 +10,16 @@ using SpecialFunctions: erf, erfinv, gamma, gamma_inc
 
 Φ(x::T where {T<:Real}) = 1/2*(1+erf(x/√2))
 
-analytical_sol(a::Real,s::Int64) = ((gamma(4/5)/(2^(1/5))-gamma(4/5)*gamma_inc(4/5,a^2/2,0)[2]/(2^(1/5)))*2/sqrt(2*pi)+(Φ(a) - Φ(-a)))^s
+#analytical_sol(a::Real,s::Int64) = ((gamma(4/5)/(2^(1/5))-gamma(4/5)*gamma_inc(4/5,a^2/2,0)[2]/(2^(1/5)))*2/sqrt(2*pi)+(Φ(a) - Φ(-a)))^s
+analytical_sol(a::Real,s::Int64) = ((gamma(9/5)*(2^(4/5))-gamma(9/5)*gamma_inc(9/5,a^2/2,0)[2]*(2^(4/5)))*2/sqrt(2*pi)+(Φ(a) - Φ(-a)))^s
 
 function main()
 
     #### Input parameters
-    s = 3 # number of stochastic dimensions
+    s = 1 # number of stochastic dimensions
     M = 16 # number of shifts
     N0 = 2  #2^N0 start number of samples
-    b = -1:-0.5:-8
+    b = -1:-0.5:-5
     requestedTolerances = 10 .^ b
 
     generator = DigitalNet64InterlacedTwo(s)
@@ -60,8 +61,9 @@ Create a randomized generator with a random shift or random digital shift for th
                 # This is our current integrand function, it should be an argument to this function... to be fixed
                 a = 1:1:s
                 gamma = 1 ./ a .^2
-#                f(x) = prod(1 .+ x .* gamma, dims=1)
-                f(x) = prod(1 .+ abs.(x) .^ 0.6, dims=1)
+                #                f(x) = prod(1 .+ x .* gamma, dims=1)
+        #        f(x) = prod(1 .+ abs.(x) .^ 0.6, dims=1)
+                f(x) = prod(1 .+ abs.(x) .^ 2.6, dims=1)
 
                 timings = zeros(length(requestedTolerances))
                 trueErrors = zeros(length(requestedTolerances))
@@ -70,14 +72,15 @@ Create a randomized generator with a random shift or random digital shift for th
                 trueTruncationErrors = zeros(length(requestedTolerances))
                 trueCubatureErrors = zeros(length(requestedTolerances))
                 nbOfSamples = zeros(length(requestedTolerances))
+                maxLevelPerRequestedTol = Int64.(zeros(length(requestedTolerances)))
 
-                maxLevel = 20
+                maxLevel = 30
 
                 for (idx, requestedTolerance) in enumerate(requestedTolerances)
 
                     sol = zeros(maxLevel+1)
                     # why do these two variables need to be declared here? can't we rewrite the logic?
-                    largeBoxBoundary = 0 # our large box is [-largeBox, largeBox]^d
+                    BoxBoundary = 0 # our large box is [-largeBox, largeBox]^d
                     ell = 0
                     #truncationError = 10000
                     #cubatureError = 10000
@@ -85,91 +88,108 @@ Create a randomized generator with a random shift or random digital shift for th
 
                     t = @elapsed begin
 
-                        solutions_per_level = zeros(1,maxLevel)
-                        cubature_error = 1000
-                        truncation_error = 1000
-                        QMc_Q = 0
+                        solutions_per_level = zeros(1,maxLevel+1)
+                        cubature_error = 1000 # initalisation
+                        truncation_error = 1000 # initalisation
+                        QMC_Q = 0
                         corrfactor_fine = 0
-                        largeBoxBoundary = 0
+                        BoxBoundary = 0
+                        exactTruncationError = 1000 # initalisation
+                        exactCubatureError = 1000 # initalisation
+                        totError = 1000
+
+                        if idx == 1
+                            ell = 0
+                        else
+
+                            ell = maxLevelPerRequestedTol[idx - 1]
+                        end
 
                         while ell <= maxLevel
-                            cubature_error = 1000
-                            truncation_error = 1000
+                            cubature_error = 1000  # reset
+                            truncation_error = 1000 # reset
+                            exactTruncationError = 1000 # reset
+                            exactCubatureError = 1000 # reset
+                            totError = 1000
 
 
-                            pLargeBox = 2^(ell)
+                            pBox = 2^(ell)
                             N = 0;
-                            QMc_Q = 0
+                            QMC_Q = 0
 
 
                             while cubature_error > 0.5 * requestedTolerance
 
-                                numberOfPointsLargeBox = 2^(N)
-                                pointsLargeBox = zeros(s, numberOfPointsLargeBox, M)
-
-                        #        println("---------")
-                        #        println("level ", ell)
-                        #        println("p for large box ", pLargeBox)
-                        #        println("Samples  ", numberOfPointsLargeBox)
+                                numberOfPointsBox = 2^(N)
+                                pointsBox = zeros(s, numberOfPointsBox, M)
 
                                 # We first generate *all* the points for all the shifts...
                                 # This does not seem like a very good idea.
                                 for shiftId = 1:M
                                     shiftedQMCGenerator = randomizedGenerator(QMCGenerator)
-                                    largeBoxBoundary = sqrt(2*2*log(pLargeBox))
+                                    BoxBoundary = sqrt(2*2*log(pBox))
 
-                                    for id = 1:numberOfPointsLargeBox # Note: this said pLargeBox instead of numberOfPointsLargeBox
+                                    for id = 1:numberOfPointsBox
 
-                                        pointsLargeBox[:,id,shiftId] = map.(x -> Φ⁻¹(Φ(-largeBoxBoundary) + (Φ(largeBoxBoundary) - Φ(-largeBoxBoundary))*x), shiftedQMCGenerator[id-1])
+                                        pointsBox[:,id,shiftId] = map.(x -> Φ⁻¹(Φ(-BoxBoundary) + (Φ(BoxBoundary) - Φ(-BoxBoundary))*x), shiftedQMCGenerator[id-1])
 
                                     end
                                 end
 
-                                # pointsLargeBox is s-by-N-by-M --f--> 1-by-N-by-M
-                                G_fine = mean(f(pointsLargeBox), dims=2) # 1-by-1-by-M
-                                corrfactor_fine = (Φ(largeBoxBoundary) - Φ(-largeBoxBoundary))^s
+                                # pointsBox is s-by-N-by-M --f--> 1-by-N-by-M
+                                G_fine = mean(f(pointsBox), dims=2) # 1-by-1-by-M
+                                corrfactor_fine = (Φ(BoxBoundary) - Φ(-BoxBoundary))^s
 
-                                vector_of_solutions = abs.(G_fine) * (corrfactor_fine)
-
-
-                                QMc_Q = mean(vector_of_solutions, dims=3)
-
-                                #QMc_R = mean(G_fine * corrfactor_fine, dims=2) # = G_fine * corrfactor_fine
-                                QMc_R = G_fine * corrfactor_fine
-                                QMc_std = std(QMc_R) / sqrt(M)
+                                QMC_R = abs.(G_fine) * (corrfactor_fine)
 
 
+                                QMC_Q = mean(QMC_R, dims=3)
 
-                                cubature_error = QMc_std
+                                #QMC_R = mean(G_fine * corrfactor_fine, dims=2) # = G_fine * corrfactor_fine
+                                #QMC_R = G_fine * corrfactor_fine
+                                QMC_std = std(QMC_R) / sqrt(M)
+
+
+
+                                cubature_error = QMC_std
                                 N=N+1
 
                             end
 
-
                             if ell == 0
-                                solutions_per_level[ell+1] = QMc_Q[1]
+                                solutions_per_level[ell+1] = QMC_Q[1]
                                 ell = ell + 1
                             else
-                                solutions_per_level[ell+1] = QMc_Q[1]
+                                solutions_per_level[ell+1] = QMC_Q[1]
                                 truncation_error = abs(solutions_per_level[ell+1] - solutions_per_level[ell])
 
 
                                 if truncation_error > 0.5 * requestedTolerance
                                     ell = ell + 1
                                 else
+
+                                    exactSolOnBox = analytical_sol(BoxBoundary,s)
+                                    exactSol = analytical_sol(1000,s)
+                                    exactCubatureError = abs(exactSolOnBox - QMC_Q[1])
+                                    exactTruncationError = abs(exactSol - exactSolOnBox)
+                                    totError = abs(exactSol - QMC_Q[1])
+
+
                                     println("For tolerance ", requestedTolerance)
                                     println("Levels needed ", ell)
                                     println("samples needed on finest level ", 2^N)
-                                    println("box is ", largeBoxBoundary)
-                                    println("exact solution on given box is ", analytical_sol(largeBoxBoundary,s))
-                                    println("solution is ", QMc_Q[1])
-                                    println("exact solution  is ", analytical_sol(1000,s))
+                                    println("box is ", BoxBoundary)
+                                    println("exact solution on given box is ", exactSolOnBox)
+                                    println("solution is ", QMC_Q[1])
+                                    println("exact solution  is ", exactSol)
                                     println("Estimated Cubature error is ", cubature_error)
-                                    println("Exact Cubature error is ", abs(analytical_sol(largeBoxBoundary,s)-QMc_Q[1]))
+                                    println("Exact Cubature error is ", exactCubatureError)
                                     println("Estimated Truncation error is ", truncation_error)
-                                    println("Exact Truncation error is ", abs(analytical_sol(1000,s)-analytical_sol(largeBoxBoundary,s)))
+                                    println("Exact Truncation error is ", exactTruncationError)
+                                    println("total  error is ", totError)
 
-                                    ell = maxLevel + 1
+                                    break
+
 
                                 end
 
@@ -184,8 +204,13 @@ Create a randomized generator with a random shift or random digital shift for th
                     estimatedTruncationErrors[idx] = truncation_error
                     estimatedCubatureErrors[idx] = cubature_error
                     timings[idx] = t
-                    trueErrors[idx] = abs(1 - QMc_Q[1])
+                    trueErrors[idx] = totError
+                    trueTruncationErrors[idx] = exactTruncationError
+                    trueCubatureErrors[idx] = exactCubatureError
+                    maxLevelPerRequestedTol[idx] = ell
                 end # loop over requestedTolerances
+
+
 
                 Data = Dict()
                 Data[1] = requestedTolerances
@@ -233,6 +258,10 @@ Create a randomized generator with a random shift or random digital shift for th
                 loglog(requestedTolerances, abs.(trueCubatureErrors), "--r*")
                 loglog(requestedTolerances, abs.(estimatedTruncationErrors), "-g*")
                 loglog(requestedTolerances, abs.(trueTruncationErrors), "--g*")
+                loglog(requestedTolerances, requestedTolerances.^2, "--k+")
+                loglog(requestedTolerances, requestedTolerances, "--r+")
+
+
                 str = string(QMCType, "\n", "s = ", s, " shift = ", M, " \n", "Errors in function of requested RMSE")
                 title(str)
                 ylabel("Abs. error")
@@ -240,6 +269,8 @@ Create a randomized generator with a random shift or random digital shift for th
                 legend(("true error", "est cubature error", "true cubature error", "est trunc error", "true trunc error"))
                 println(estimatedTruncationErrors)
                 println(estimatedCubatureErrors)
+                println(trueTruncationErrors)
+                println(trueCubatureErrors)
 
                 figure()
                 str = string(QMCType, "\n", "s = ", s, " shift = ", M, " \n", "Samples")
