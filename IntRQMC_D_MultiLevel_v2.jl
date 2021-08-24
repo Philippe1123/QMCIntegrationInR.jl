@@ -6,9 +6,9 @@ using PyPlot
 using Statistics: mean, std
 using SpecialFunctions: erf, erfinv
 
-Φ⁻¹(x::T where {T<:Real}) = √2*erfinv(2*x-1)
+Φ⁻¹(x::T where {T<:Real}) = √2 * erfinv(2 * x - 1)
 
-Φ(x::T where {T<:Real}) = 1/2*(1+erf(x/√2))
+Φ(x::T where {T<:Real}) = 1 / 2 * (1 + erf(x / √2))
 
 function main()
 
@@ -20,7 +20,7 @@ function main()
     requestedTolerances = 10 .^ b
 
     generator = DigitalNet64InterlacedTwo(s)
-#    generator = LatticeRule(s)
+    #    generator = LatticeRule(s)
 
     Data = RunSimulation(s, M, N0, requestedTolerances, generator)
 
@@ -34,14 +34,16 @@ end # end of function main()
 Create a randomized generator with a random shift or random digital shift for the passed in QMC generator.
 """
 randomizedGenerator(latticeGenerator::LatticeRule) = ShiftedLatticeRule(latticeGenerator)
-randomizedGenerator(digitalnetGenerator::DigitalNet64) = DigitalShiftedDigitalNets64(digitalnetGenerator)
+randomizedGenerator(digitalnetGenerator::DigitalNet64) =
+    DigitalShiftedDigitalNets64(digitalnetGenerator)
 
 ## Quick and dirty solution for labeling the point set (needs to be fixed in a more decent matter)
 """
 String label for the current generator, either Lattice or Sobol1, Sobol2, or Sobol3.
 """
 labelThisGenerator(latticeGenerator::LatticeRule) = "Lattice"
-labelThisGenerator(digitalnetGenerator::DigitalNet64) = "Sobol$(Int32(round(sqrt(reversebits(digitalnetGenerator.C[1])))))"
+labelThisGenerator(digitalnetGenerator::DigitalNet64) =
+    "Sobol$(Int32(round(sqrt(reversebits(digitalnetGenerator.C[1])))))"
 
 
 """
@@ -51,14 +53,20 @@ Run the algorithm for our test function in `s` dimensions with `M` shifts and a
 starting number of points `2^N0` for all the requested tolerances in
 `requestedTolerances` using the QMC point generator in `QMCGenerator`.
 """
-function RunSimulation(s::Int64, M::Int64, N0::Int64, requestedTolerances::Vector, QMCGenerator::Union{DigitalNet64,LatticeRule})
+function RunSimulation(
+    s::Int64,
+    M::Int64,
+    N0::Int64,
+    requestedTolerances::Vector,
+    QMCGenerator::Union{DigitalNet64,LatticeRule},
+)
 
     QMCType = labelThisGenerator(QMCGenerator)
 
     # This is our current integrand function, it should be an argument to this function... to be fixed
     a = 1:1:s
-    gamma = 1 ./ a .^2
-    f(x) = prod(1 .+ x .* gamma, dims=1)
+    gamma = 1 ./ a .^ 2
+    f(x) = prod(1 .+ x .* gamma, dims = 1)
 
     timings = zeros(length(requestedTolerances))
     trueErrors = zeros(length(requestedTolerances))
@@ -71,8 +79,7 @@ function RunSimulation(s::Int64, M::Int64, N0::Int64, requestedTolerances::Vecto
     maxLevel = 12
 
     for (idx, requestedTolerance) in enumerate(requestedTolerances)
-
-        sol = zeros(maxLevel+1)
+        sol = zeros(maxLevel + 1)
         # why do these two variables need to be declared here? can't we rewrite the logic?
         largeBoxBoundary = 0 # our large box is [-largeBox, largeBox]^d
         smallBoxBoundary = 0 # our small box is [-smallBox, smallBox]^d
@@ -88,10 +95,10 @@ function RunSimulation(s::Int64, M::Int64, N0::Int64, requestedTolerances::Vecto
 
             while ell <= maxLevel
 
-                pLargeBox = 2^(N0+ell)
-                pSmallBox = 2^(N0+ell-1)
+                pLargeBox = 2^(N0 + ell)
+                pSmallBox = 2^(N0 + ell - 1)
 
-                numberOfPointsLargeBox = 2^(N0+ell+sampleMultiplierLog2)
+                numberOfPointsLargeBox = 2^(N0 + ell + sampleMultiplierLog2)
                 #numberOfPointsSmallBox = 2^(N0+ell-1+sampleMultiplierLog2)
 
                 println("---------")
@@ -108,23 +115,33 @@ function RunSimulation(s::Int64, M::Int64, N0::Int64, requestedTolerances::Vecto
                 # We first generate *all* the points for all the shifts...
                 # This does not seem like a very good idea.
                 for shiftId = 1:M
-
                     shiftedQMCGenerator = randomizedGenerator(QMCGenerator)
 
-                    largeBoxBoundary = sqrt(2*2*log(pLargeBox))
-                    smallBoxBoundary = sqrt(2*2*log(pSmallBox))
+                    largeBoxBoundary = sqrt(2 * 2 * log(pLargeBox))
+                    smallBoxBoundary = sqrt(2 * 2 * log(pSmallBox))
 
                     ct = 0 # count the points which fall into the small box
                     for id = 1:numberOfPointsLargeBox # Note: this said pLargeBox instead of numberOfPointsLargeBox
 
-                        pointsLargeBox[:,id,shiftId] = map.(x -> Φ⁻¹(Φ(-largeBoxBoundary) + (Φ(largeBoxBoundary) - Φ(-largeBoxBoundary))*x), shiftedQMCGenerator[id-1])
+                        pointsLargeBox[:, id, shiftId] =
+                            map.(
+                                x -> Φ⁻¹(
+                                    Φ(-largeBoxBoundary) +
+                                    (Φ(largeBoxBoundary) - Φ(-largeBoxBoundary)) * x,
+                                ),
+                                shiftedQMCGenerator[id-1],
+                            )
 
-                        if any((pointsLargeBox[:,id,shiftId] .> smallBoxBoundary)  .| (pointsLargeBox[:,id,shiftId] .< -smallBoxBoundary))
+                        if any(
+                            (pointsLargeBox[:, id, shiftId] .> smallBoxBoundary) .|
+                            (pointsLargeBox[:, id, shiftId] .< -smallBoxBoundary),
+                        )
                             # point is not in the small box
                         else
                             # point is in the small box
                             ct = ct + 1
-                            pointsSmallBox[:,ct,shiftId] = pointsLargeBox[:,id,shiftId]
+                            pointsSmallBox[:, ct, shiftId] =
+                                pointsLargeBox[:, id, shiftId]
                         end
                     end
 
@@ -133,8 +150,8 @@ function RunSimulation(s::Int64, M::Int64, N0::Int64, requestedTolerances::Vecto
                 end
 
                 nshiftsEffective = minimum(nbOfPointsInSmallBoxPerShift)
-                pointsSmallBox = pointsSmallBox[:,1:Int64(nshiftsEffective),:] ## FIXME?
-                pct = (1 - size(pointsSmallBox,2)/size(pointsLargeBox,2)) * 100
+                pointsSmallBox = pointsSmallBox[:, 1:Int64(nshiftsEffective), :] ## FIXME?
+                pct = (1 - size(pointsSmallBox, 2) / size(pointsLargeBox, 2)) * 100
                 println("Percentage of points in smal box is ", pct, "%")
                 println("Large box is ", -largeBoxBoundary, " ", largeBoxBoundary)
                 println("Small box is ", -smallBoxBoundary, " ", smallBoxBoundary)
@@ -142,17 +159,17 @@ function RunSimulation(s::Int64, M::Int64, N0::Int64, requestedTolerances::Vecto
                 append!(percentagePtInSmallBox, pct)
 
                 # pointsLargeBox is s-by-N-by-M --f--> 1-by-N-by-M
-                G_fine = mean(f(pointsLargeBox), dims=2) # 1-by-1-by-M
+                G_fine = mean(f(pointsLargeBox), dims = 2) # 1-by-1-by-M
                 corrfactor_fine = (Φ(largeBoxBoundary) - Φ(-largeBoxBoundary))^s
-                G_coarse = mean(f(pointsSmallBox), dims=2) # 1-by-1-by-M
+                G_coarse = mean(f(pointsSmallBox), dims = 2) # 1-by-1-by-M
                 corrfactor_coarse = (Φ(smallBoxBoundary) - Φ(-smallBoxBoundary))^s
-    #            diff = abs.(G_fine .- G_coarse) * (corrfactor_fine - corrfactor_coarse)
+                #            diff = abs.(G_fine .- G_coarse) * (corrfactor_fine - corrfactor_coarse)
                 diff = abs.(G_fine .- G_coarse)
                 println("corrfactor big box ", corrfactor_fine)
                 println("corrfactor small box ", corrfactor_coarse)
                 println("corrfactor diff ", (corrfactor_fine - corrfactor_coarse))
 
-                QMc_Q = mean(diff, dims=3) # estimate for truncation error over shifts; problem of number of shifts
+                QMc_Q = mean(diff, dims = 3) # estimate for truncation error over shifts; problem of number of shifts
                 sol[ell+1] = QMc_Q[1]
 
                 #QMc_R = mean(G_fine * corrfactor_fine, dims=2) # = G_fine * corrfactor_fine
@@ -165,11 +182,11 @@ function RunSimulation(s::Int64, M::Int64, N0::Int64, requestedTolerances::Vecto
                 println("Cubature error is ", cubatureError)
                 println("Truncation error is ", sol[ell+1])
 
-#                soll = mean(G_fine * corrfactor_fine, dims=3)[1]
-                soll = mean(G_fine, dims=3)[1]
+                #                soll = mean(G_fine * corrfactor_fine, dims=3)[1]
+                soll = mean(G_fine, dims = 3)[1]
 
                 println("Sol is ", soll)
-                println("abs error is ", abs(1-soll))
+                println("abs error is ", abs(1 - soll))
 
                 if cubatureError > 0.5 * requestedTolerance || truncationError == 0
                     sampleMultiplierLog2 = sampleMultiplierLog2 + 1
@@ -193,7 +210,9 @@ function RunSimulation(s::Int64, M::Int64, N0::Int64, requestedTolerances::Vecto
 
         println("sampleMultiplierLog2 is ", sampleMultiplierLog2)
         println("Runtime is ", t, " sec")
-        println("******************************************************************************")
+        println(
+            "******************************************************************************",
+        )
 
         timings[idx] = t
         trueErrors[idx] = abs(1 - soll)
@@ -233,7 +252,16 @@ function plotter(Data::Dict)
 
     figure()
     loglog(requestedTolerances, timings, "-*")
-    str = string(QMCType, "\n", "s = ", s, " shift = ", M, " \n", "Runtime in function of requested tolerance")
+    str = string(
+        QMCType,
+        "\n",
+        "s = ",
+        s,
+        " shift = ",
+        M,
+        " \n",
+        "Runtime in function of requested tolerance",
+    )
     title(str)
     xlabel("RMSE")
     ylabel("run time sec")
@@ -245,18 +273,33 @@ function plotter(Data::Dict)
     loglog(requestedTolerances, abs.(trueCubatureErrors), "--r*")
     loglog(requestedTolerances, abs.(estimatedTruncationErrors), "-g*")
     loglog(requestedTolerances, abs.(trueTruncationErrors), "--g*")
-    str = string(QMCType, "\n", "s = ", s, " shift = ", M, " \n", "Errors in function of requested RMSE")
+    str = string(
+        QMCType,
+        "\n",
+        "s = ",
+        s,
+        " shift = ",
+        M,
+        " \n",
+        "Errors in function of requested RMSE",
+    )
     title(str)
     ylabel("Abs. error")
     xlabel("RMSE")
-    legend(("true error", "est cubature error", "true cubature error", "est trunc error", "true trunc error"))
+    legend((
+        "true error",
+        "est cubature error",
+        "true cubature error",
+        "est trunc error",
+        "true trunc error",
+    ))
     println(estimatedTruncationErrors)
     println(estimatedCubatureErrors)
 
     figure()
     str = string(QMCType, "\n", "s = ", s, " shift = ", M, " \n", "Samples")
     title(str)
-    loglog(requestedTolerances,nbOfSamples,"-*")
+    loglog(requestedTolerances, nbOfSamples, "-*")
     ylabel("Nb. Samples")
     xlabel("Requested RMSE")
     println(nbOfSamples)
