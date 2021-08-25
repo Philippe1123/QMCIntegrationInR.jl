@@ -14,43 +14,97 @@ using PrettyTables
 
 
 
+#funTransform = (x, y) -> transform(MultilevelEstimators.Uniform(-y,y), x)
+
+
 #analytical_sol(a::Real,s::Int64) = ((gamma(4/5)/(2^(1/5))-gamma(4/5)*gamma_inc(4/5,a^2/2,0)[2]/(2^(1/5)))*2/sqrt(2*pi)+(Φ(a) - Φ(-a)))^s
-analytical_sol(a::Real, s::Int64, params::Float64) =
-    params == 0.6 ?
+#analytical_sol(a::Real, s::Int64, params::Float64) =
+#    params == 0.6 ?
+#    (
+#        (
+#            gamma(4 / 5) / (2^(1 / 5)) -
+#            gamma(4 / 5) * gamma_inc(4 / 5, a^2 / 2, 0)[2] / (2^(1 / 5))
+#        ) * 2 / sqrt(2 * pi) + (Φ(a) - Φ(-a))
+#    )^s :
+#    params == 2.6 ?
+#    (
+#        (
+#            gamma(9 / 5) * (2^(4 / 5)) -
+#            gamma(9 / 5) * gamma_inc(9 / 5, a^2 / 2, 0)[2] * (2^(4 / 5))
+#        ) * 2 / sqrt(2 * pi) + (Φ(a) - Φ(-a))
+#    )^s : 1
+
+analytical_sol(a::Real, s::Int64, sigma::Real) =
     (
         (
-            gamma(4 / 5) / (2^(1 / 5)) -
-            gamma(4 / 5) * gamma_inc(4 / 5, a^2 / 2, 0)[2] / (2^(1 / 5))
-        ) * 2 / sqrt(2 * pi) + (Φ(a) - Φ(-a))
-    )^s :
-    params == 2.6 ?
-    (
-        (
-            gamma(9 / 5) * (2^(4 / 5)) -
-            gamma(9 / 5) * gamma_inc(9 / 5, a^2 / 2, 0)[2] * (2^(4 / 5))
-        ) * 2 / sqrt(2 * pi) + (Φ(a) - Φ(-a))
-    )^s : 1
-
-
+            gamma((1 + sigma) / 2) -
+            gamma((1 + sigma) / 2) * gamma_inc((1 + sigma) / 2, a^2 / 2, 0)[2]
+        ) * 2^(sigma / 2) / sqrt(pi) + erf(a / sqrt(2))
+    )^s
 
 function main()
 
     #### Input parameters
-    s = 1 # number of stochastic dimensions
     M = 16 # number of shifts
-    alpha = 2
+    alpha = 3
     N = 2 .^ collect(4:1:17)
-    params = 0.6
-    correctionFactor = true
 
 
-    generator = DigitalNet64InterlacedTwo(s)
+    #  generator = DigitalNet64InterlacedTwo(s)
+    #generator = DigitalNet64InterlacedThree(s)
+
     #generator = LatticeRule(s)
 
-    Data = RunSimulation(s, M, N, alpha, params, generator, correctionFactor)
+    #generator = DigitalNet64(s)
 
+"""
+        # dim = 1
+        s = 1
+        Data = RunSimulation(s, M, N, 1, 0.6, LatticeRule(s));
+        plotter(Data)
+        Data = RunSimulation(s, M, N, 1, 0.6, DigitalNet64(s) );
+        plotter(Data)
+        Data = RunSimulation(s, M, N, 2, 1.6, LatticeRule(s));
+        plotter(Data)
+        Data = RunSimulation(s, M, N, 2, 1.6, DigitalNet64InterlacedTwo(s) );
+        plotter(Data)
+        Data = RunSimulation(s, M, N, 3, 2.6, LatticeRule(s) );
+        plotter(Data)
+        Data = RunSimulation(s, M, N, 3, 2.6, DigitalNet64InterlacedThree(s) );
+        plotter(Data)
+
+    # dim = 2
+    s = 2
+    Data = RunSimulation(s, M, N, 1, 0.6, LatticeRule(s));
     plotter(Data)
-    
+    Data = RunSimulation(s, M, N, 1, 0.6, DigitalNet64(s) );
+    plotter(Data)
+    Data = RunSimulation(s, M, N, 2, 1.6, LatticeRule(s));
+    plotter(Data)
+    Data = RunSimulation(s, M, N, 2, 1.6, DigitalNet64InterlacedTwo(s) );
+    plotter(Data)
+    Data = RunSimulation(s, M, N, 3, 2.6, LatticeRule(s) )
+    plotter(Data)
+    Data = RunSimulation(s, M, N, 3, 2.6, DigitalNet64InterlacedThree(s) );
+    plotter(Data)
+    """
+
+    # dim = 3
+    N = 2 .^ collect(4:1:21)
+    s = 3
+    Data = RunSimulation(s, M, N, 1, 0.6, LatticeRule(s));
+    plotter(Data)
+    Data = RunSimulation(s, M, N, 1, 0.6, DigitalNet64(s) );
+    plotter(Data)
+    Data = RunSimulation(s, M, N, 2, 1.6, LatticeRule(s));
+    plotter(Data)
+    Data = RunSimulation(s, M, N, 2, 1.6, DigitalNet64InterlacedTwo(s) );
+    plotter(Data)
+    Data = RunSimulation(s, M, N, 3, 2.6, LatticeRule(s) );
+    plotter(Data)
+    Data = RunSimulation(s, M, N, 3, 2.6, DigitalNet64InterlacedThree(s) );
+    plotter(Data)
+
 
 end # end of function main()
 
@@ -85,7 +139,6 @@ function RunSimulation(
     alpha::Int64,
     params::Float64,
     QMCGenerator::Union{DigitalNet64,LatticeRule},
-    correctionFactor::Bool,
 )
 
     QMCType = labelThisGenerator(QMCGenerator)
@@ -105,7 +158,10 @@ function RunSimulation(
     solutionsOnBox = zeros(length(N))
     correctionFactors = zeros(length(N))
     exactSol = 0
-    f(x) = prod(1 .+ abs.(x) .^ params, dims = 1)
+    f(x, params) = prod(
+        (1 .+ abs.(x) .^ params) .* 1 / (sqrt(2 * pi)) .* exp.(-(x .^ 2) ./ 2),
+        dims = 1,
+    )
 
 
     # why do these two variables need to be declared here? can't we rewrite the logic?
@@ -140,23 +196,32 @@ function RunSimulation(
                 for id = 1:numberOfPointsBox
                     pointsBox[:, id, shiftId] =
                         map.(
-                            x -> Φ⁻¹(
-                                Φ(-BoxBoundary) + (Φ(BoxBoundary) - Φ(-BoxBoundary)) * x,
-                            ),
+                            x -> -BoxBoundary + (BoxBoundary - (-BoxBoundary)) * x,
                             shiftedQMCGenerator[id-1],
                         )
-
-
                 end
+
+
+
             end
 
+
+
+
+
+
+
+
+
+
             # pointsBox is s-by-N-by-M --f--> 1-by-N-by-M
-            G_fine = mean(f(pointsBox), dims = 2) # 1-by-1-by-M
+            G_fine = mean(f(pointsBox, params), dims = 2) # 1-by-1-by-M
 
-            corrfactor_fine =
-                correctionFactor == true ? (Φ(BoxBoundary) - Φ(-BoxBoundary))^s : 1
 
-            QMC_R = abs.(G_fine) * (corrfactor_fine)
+
+
+
+            QMC_R = abs.(G_fine) * (BoxBoundary * 2)^s
 
 
             QMC_Q = mean(QMC_R, dims = 3)
@@ -181,27 +246,27 @@ function RunSimulation(
             totError = abs(exactSol - QMC_Q[1]) ./ exactSol
 
 
-            println("Levels needed ", ell)
-            println("samples needed on finest level ", ell)
-            println("box is ", BoxBoundary)
-            println("exact solution on given box is ", exactSolOnBox)
-            println("solution is ", QMC_Q[1])
-            println("exact solution  is ", exactSol)
-            println("Estimated rel Cubature error is ", cubature_error)
-            println("Exact rel Cubature error is ", exactCubatureError)
-            println("Estimated rel Truncation error is ", truncation_error)
-            println("Exact rel Truncation error is ", exactTruncationError)
-            println("total rel error is ", totError)
+           # println("Levels needed ", ell)
+           # println("samples needed on finest level ", ell)
+           # println("box is ", BoxBoundary)
+           # println("exact solution on given box is ", exactSolOnBox)
+           # println("solution is ", QMC_Q[1])
+           # println("exact solution  is ", exactSol)
+           # println("Estimated rel Cubature error is ", cubature_error)
+           # println("Exact rel Cubature error is ", exactCubatureError)
+           # println("Estimated rel Truncation error is ", truncation_error)
+           # println("Exact rel Truncation error is ", exactTruncationError)
+           # println("total rel error is ", totError)
 
 
 
 
         end # end of @elapsed
 
-        println("Runtime is ", t, " sec")
-        println(
-            "******************************************************************************",
-        )
+        #println("Runtime is ", t, " sec")
+        #println(
+        #    "******************************************************************************",
+        #)
         correctionFactors[idx] = corrfactor_fine
         estimatedTruncationErrors[idx] = truncation_error
         estimatedCubatureErrors[idx] = cubature_error
@@ -219,7 +284,6 @@ function RunSimulation(
     println("stochastic dimensions is equal to ", s)
     println("params is equal to ", params)
     println("number of shifts is ", M)
-    println("Correction factor enabled ?", correctionFactor)
 
 
     data = hcat(
@@ -230,7 +294,6 @@ function RunSimulation(
         solutionsOnBox,
         trueTruncationErrors,
         trueCubatureErrors,
-        correctionFactors,
     )
     header = ([
         "n",
@@ -240,12 +303,11 @@ function RunSimulation(
         "Iab",
         "trunc rel error (exact)",
         "box cub rel error (exact)",
-        "corr factor ",
     ])
 
     formatters = ft_printf(
-        ["%-3d", "%16.8f", "%16.16f", "%.5e", "%16.16f", "%.5e", "%.5e", "%16.8f"],
-        [1, 2, 3, 4, 5, 6, 7, 8],
+        ["%-3d", "%16.8f", "%16.16f", "%.5e", "%16.16f", "%.5e", "%.5e"],
+        [1, 2, 3, 4, 5, 6, 7],
     )
 
     pretty_table(data; header = header, formatters = formatters)
@@ -264,11 +326,10 @@ function RunSimulation(
     Data[9] = s
     Data[10] = M
     Data[11] = N
-    Data[12] = correctionFactor
     Data[13] = params
     Data[14] = alpha
 
-    return Data
+    return Data;
 end
 
 
@@ -289,7 +350,6 @@ function plotter(Data::Dict)
 
     figure()
     loglog(nbOfSamples, trueErrors, "-ks")
-    println(timings)
     #loglog(nbOfSamples, abs.(estimatedCubatureErrors), "-r*")
     loglog(nbOfSamples, abs.(trueCubatureErrors), "-rs")
     #loglog(nbOfSamples, abs.(estimatedTruncationErrors), "-g*")
@@ -308,10 +368,8 @@ function plotter(Data::Dict)
         M,
         ", params = ",
         Data[13],
-        ", corr factor ? = ",
-        Data[12],
         ", alpha = ",
-        Data[14]  
+        Data[14],
     )
     title(str)
     ylabel("Abs. error")
@@ -324,11 +382,19 @@ function plotter(Data::Dict)
         "N^-2",
         "N^-3",
     ))
-    println(estimatedTruncationErrors)
-    println(estimatedCubatureErrors)
-    println(trueTruncationErrors)
-    println(trueCubatureErrors)
-    savefig(string(str,".png"))
+
+    savefig(string(str, ".png"))
+    println("    ")
+    println("    ")
+    println("    ")
+    println("    ")
+    println("    ")
+    println("    ")
+    println("    ")
+    println("    ")
+    println("    ")
+    println("    ")
+
 
 
 end
