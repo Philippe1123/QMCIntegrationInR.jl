@@ -97,7 +97,7 @@ function main()
 
     # dim = 3
     s = 3
-  #  Data = RunSimulation(s, M, N_lattice, 1, 0.6, LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))),s))
+    Data = RunSimulation(s, M, N_lattice, 1, 0.6, LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))),s))
   #  plotter(Data)
     writeOut(Data,13)
     Data = RunSimulation(s, M, N_net, 1, 0.6, DigitalNet64(s))
