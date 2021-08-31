@@ -1,12 +1,16 @@
 using DigitalNets
 using LatticeRules
 
-using PyPlot
+#using PyPlot
 
 using Statistics: mean, std
 using SpecialFunctions: erf, erfinv, gamma, gamma_inc
 using StringLiterals
 using PrettyTables
+using Random
+using DelimitedFiles
+using JLD2
+using FileIO
 
 Φ⁻¹(x::T where {T<:Real}) = √2 * erfinv(2 * x - 1)
 
@@ -45,9 +49,10 @@ analytical_sol(a::Real, s::Int64, sigma::Real) =
 function main()
 
     #### Input parameters
-    M = 16 # number of shifts
+    M = 64 # number of shifts
     alpha = 3
-    N = 2 .^ collect(4:1:17)
+    N_lattice = 2 .^ collect(4:1:20)
+    N_net = 2 .^ collect(4:1:25)
 
 
     #  generator = DigitalNet64InterlacedTwo(s)
@@ -57,22 +62,23 @@ function main()
 
     #generator = DigitalNet64(s)
 
+    """
+    # dim = 1
+    s = 1
+    Data = RunSimulation(s, M, N, 1, 0.6, LatticeRule(s));
+    plotter(Data)
+    Data = RunSimulation(s, M, N, 1, 0.6, DigitalNet64(s) );
+    plotter(Data)
+    Data = RunSimulation(s, M, N, 2, 1.6, LatticeRule(s));
+    plotter(Data)
+    Data = RunSimulation(s, M, N, 2, 1.6, DigitalNet64InterlacedTwo(s) );
+    plotter(Data)
+    Data = RunSimulation(s, M, N, 3, 2.6, LatticeRule(s) );
+    plotter(Data)
+    Data = RunSimulation(s, M, N, 3, 2.6, DigitalNet64InterlacedThree(s) );
+    plotter(Data)
+    """
 """
-        # dim = 1
-        s = 1
-        Data = RunSimulation(s, M, N, 1, 0.6, LatticeRule(s));
-        plotter(Data)
-        Data = RunSimulation(s, M, N, 1, 0.6, DigitalNet64(s) );
-        plotter(Data)
-        Data = RunSimulation(s, M, N, 2, 1.6, LatticeRule(s));
-        plotter(Data)
-        Data = RunSimulation(s, M, N, 2, 1.6, DigitalNet64InterlacedTwo(s) );
-        plotter(Data)
-        Data = RunSimulation(s, M, N, 3, 2.6, LatticeRule(s) );
-        plotter(Data)
-        Data = RunSimulation(s, M, N, 3, 2.6, DigitalNet64InterlacedThree(s) );
-        plotter(Data)
-
     # dim = 2
     s = 2
     Data = RunSimulation(s, M, N, 1, 0.6, LatticeRule(s));
@@ -87,23 +93,29 @@ function main()
     plotter(Data)
     Data = RunSimulation(s, M, N, 3, 2.6, DigitalNet64InterlacedThree(s) );
     plotter(Data)
-    """
+  """      
 
     # dim = 3
-    N = 2 .^ collect(4:1:21)
     s = 3
-    Data = RunSimulation(s, M, N, 1, 0.6, LatticeRule(s));
-    plotter(Data)
-    Data = RunSimulation(s, M, N, 1, 0.6, DigitalNet64(s) );
-    plotter(Data)
-    Data = RunSimulation(s, M, N, 2, 1.6, LatticeRule(s));
-    plotter(Data)
-    Data = RunSimulation(s, M, N, 2, 1.6, DigitalNet64InterlacedTwo(s) );
-    plotter(Data)
-    Data = RunSimulation(s, M, N, 3, 2.6, LatticeRule(s) );
-    plotter(Data)
-    Data = RunSimulation(s, M, N, 3, 2.6, DigitalNet64InterlacedThree(s) );
-    plotter(Data)
+  #  Data = RunSimulation(s, M, N_lattice, 1, 0.6, LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))),s))
+  #  plotter(Data)
+    writeOut(Data,13)
+    Data = RunSimulation(s, M, N_net, 1, 0.6, DigitalNet64(s))
+ #   plotter(Data)
+    writeOut(Data,14)
+    Data = RunSimulation(s, M, N_lattice, 2, 1.6, LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))),s))
+ #   plotter(Data)
+    writeOut(Data,15)
+
+    Data = RunSimulation(s, M, N_net, 2, 1.6, DigitalNet64InterlacedTwo(s))
+ #   plotter(Data)
+    writeOut(Data,16)
+    Data = RunSimulation(s, M, N_lattice, 3, 2.6, LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))),s))
+ #   plotter(Data)
+    writeOut(Data,17)
+    Data = RunSimulation(s, M, N_net, 3, 2.6, DigitalNet64InterlacedThree(s))
+ #   plotter(Data)
+    writeOut(Data,18)
 
 
 end # end of function main()
@@ -158,6 +170,10 @@ function RunSimulation(
     solutionsOnBox = zeros(length(N))
     correctionFactors = zeros(length(N))
     exactSol = 0
+    shiftAverages=zeros(M,length(N))
+
+
+
     f(x, params) = prod(
         (1 .+ abs.(x) .^ params) .* 1 / (sqrt(2 * pi)) .* exp.(-(x .^ 2) ./ 2),
         dims = 1,
@@ -171,6 +187,7 @@ function RunSimulation(
     soll = 10000
     idx = 1
     for ell in N
+        println("Currently running sample number ",ell, " exponent ", log.(ell)./log(2))
         t = @elapsed begin
 
             cubature_error = 1000 # initalisation
@@ -190,6 +207,8 @@ function RunSimulation(
             BoxBoundary = sqrt(2 * alpha * log(numberOfPointsBox))
             boundsOfBoxes[idx] = BoxBoundary
 
+
+            Random.seed!(1234)
             for shiftId = 1:M
                 shiftedQMCGenerator = randomizedGenerator(QMCGenerator)
 
@@ -216,12 +235,17 @@ function RunSimulation(
 
             # pointsBox is s-by-N-by-M --f--> 1-by-N-by-M
             G_fine = mean(f(pointsBox, params), dims = 2) # 1-by-1-by-M
-
+            pointsBox = 0
+            GC.gc()
 
 
 
 
             QMC_R = abs.(G_fine) * (BoxBoundary * 2)^s
+            G_fine = 0
+            GC.gc()
+            shiftAverages[:,idx]=vec(reshape(QMC_R,M,1,1))
+
 
 
             QMC_Q = mean(QMC_R, dims = 3)
@@ -229,7 +253,8 @@ function RunSimulation(
 
 
             QMC_std = std(QMC_R) / sqrt(M)
-
+            QMC_R = 0
+            GC.gc()
 
 
             cubature_error = QMC_std
@@ -246,17 +271,17 @@ function RunSimulation(
             totError = abs(exactSol - QMC_Q[1]) ./ exactSol
 
 
-           # println("Levels needed ", ell)
-           # println("samples needed on finest level ", ell)
-           # println("box is ", BoxBoundary)
-           # println("exact solution on given box is ", exactSolOnBox)
-           # println("solution is ", QMC_Q[1])
-           # println("exact solution  is ", exactSol)
-           # println("Estimated rel Cubature error is ", cubature_error)
-           # println("Exact rel Cubature error is ", exactCubatureError)
-           # println("Estimated rel Truncation error is ", truncation_error)
-           # println("Exact rel Truncation error is ", exactTruncationError)
-           # println("total rel error is ", totError)
+            # println("Levels needed ", ell)
+            # println("samples needed on finest level ", ell)
+            # println("box is ", BoxBoundary)
+            # println("exact solution on given box is ", exactSolOnBox)
+            # println("solution is ", QMC_Q[1])
+            # println("exact solution  is ", exactSol)
+            # println("Estimated rel Cubature error is ", cubature_error)
+            # println("Exact rel Cubature error is ", exactCubatureError)
+            # println("Estimated rel Truncation error is ", truncation_error)
+            # println("Exact rel Truncation error is ", exactTruncationError)
+            # println("total rel error is ", totError)
 
 
 
@@ -287,6 +312,7 @@ function RunSimulation(
 
 
     data = hcat(
+        log.(N)./log(2),
         N,
         boundsOfBoxes,
         QMCResults,
@@ -296,6 +322,7 @@ function RunSimulation(
         trueCubatureErrors,
     )
     header = ([
+        "m",
         "n",
         "a",
         "Q",
@@ -306,8 +333,8 @@ function RunSimulation(
     ])
 
     formatters = ft_printf(
-        ["%-3d", "%16.8f", "%16.16f", "%.5e", "%16.16f", "%.5e", "%.5e"],
-        [1, 2, 3, 4, 5, 6, 7],
+        ["%-3d","%-3d", "%16.8f", "%16.16f", "%.5e", "%16.16f", "%.5e", "%.5e"],
+        [1, 2, 3, 4, 5, 6, 7,8],
     )
 
     pretty_table(data; header = header, formatters = formatters)
@@ -328,8 +355,9 @@ function RunSimulation(
     Data[11] = N
     Data[13] = params
     Data[14] = alpha
+    Data[15] = shiftAverages
 
-    return Data;
+    return Data
 end
 
 
@@ -372,7 +400,7 @@ function plotter(Data::Dict)
         Data[14],
     )
     title(str)
-    ylabel("Abs. error")
+    ylabel("Rel. error")
     xlabel("N")
     legend((
         "true error",
@@ -395,6 +423,45 @@ function plotter(Data::Dict)
     println("    ")
     println("    ")
 
+    figure()
+    plt.boxplot(Data[15],positions = Int64.(log.(Data[11])./log(2)),# Each column/cell is one box
+	notch=true, # Notched center
+	whis=0.75, # Whisker length as a percent of inner quartile range
+	widths=0.25, # Width of boxes
+	vert=true, # Horizontal boxes
+	sym="rs") # Symbol color and shape (rs = red square)
+  #  plt.yscale("log")
+  #  plt.xscale("log")
+
+    title(str)
+    ylabel("expected value")
+    xlabel("log 2 of number of samples")
+    savefig(string(str, "boxplot.png"))
+
+    figure()
+    plt.boxplot(Data[15][:,(end-4):end],positions = Int64.(log.(Data[11][(end-4):end])./log(2)),# Each column/cell is one box
+	notch=true, # Notched center
+	whis=0.75, # Whisker length as a percent of inner quartile range
+	widths=0.25, # Width of boxes
+	vert=true, # Horizontal boxes
+	sym="rs") # Symbol color and shape (rs = red square)
+  #  plt.yscale("log")
+  #  plt.xscale("log")
+
+    title(str)
+    ylabel("expected value")
+    xlabel("log 2 of number of samples")
+    savefig(string(str, "boxplot_zoom.png"))
+
+
+end
+
+function writeOut(Data::Dict,Number::Int64)
+
+    currentFolder= @__DIR__
+    Path = string(currentFolder,"/",Number,".jld2")
+    println(Path)
+    save(Path,"data",Data)
 
 
 end
