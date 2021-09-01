@@ -62,60 +62,134 @@ function main()
 
     #generator = DigitalNet64(s)
 
-    """
+    
     # dim = 1
     s = 1
-    Data = RunSimulation(s, M, N, 1, 0.6, LatticeRule(s));
-    plotter(Data)
-    Data = RunSimulation(s, M, N, 1, 0.6, DigitalNet64(s) );
-    plotter(Data)
-    Data = RunSimulation(s, M, N, 2, 1.6, LatticeRule(s));
-    plotter(Data)
-    Data = RunSimulation(s, M, N, 2, 1.6, DigitalNet64InterlacedTwo(s) );
-    plotter(Data)
-    Data = RunSimulation(s, M, N, 3, 2.6, LatticeRule(s) );
-    plotter(Data)
-    Data = RunSimulation(s, M, N, 3, 2.6, DigitalNet64InterlacedThree(s) );
-    plotter(Data)
-    """
-"""
+    Data = RunSimulation(
+        s,
+        M,
+        N_lattice,
+        1,
+        0.6,
+        LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
+    )
+    writeOut(Data, 1)
+    
+    Data = RunSimulation(s, M, N_net, 1, 0.6, DigitalNet64(s))
+    writeOut(Data, 2)
+
+    Data = RunSimulation(
+        s,
+        M,
+        N_lattice,
+        2,
+        1.6,
+        LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
+    )
+    writeOut(Data, 3)
+
+    Data = RunSimulation(s, M, N_net, 2, 1.6, DigitalNet64InterlacedTwo(s))
+    writeOut(Data, 4)
+
+    Data = RunSimulation(
+        s,
+        M,
+        N_lattice,
+        3,
+        2.6,
+        LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
+    )
+    writeOut(Data, 5)
+
+    Data = RunSimulation(s, M, N_net, 3, 2.6, DigitalNet64InterlacedThree(s))
+    writeOut(Data, 6)
+    
+    
     # dim = 2
     s = 2
-    Data = RunSimulation(s, M, N, 1, 0.6, LatticeRule(s));
-    plotter(Data)
-    Data = RunSimulation(s, M, N, 1, 0.6, DigitalNet64(s) );
-    plotter(Data)
-    Data = RunSimulation(s, M, N, 2, 1.6, LatticeRule(s));
-    plotter(Data)
-    Data = RunSimulation(s, M, N, 2, 1.6, DigitalNet64InterlacedTwo(s) );
-    plotter(Data)
-    Data = RunSimulation(s, M, N, 3, 2.6, LatticeRule(s) )
-    plotter(Data)
-    Data = RunSimulation(s, M, N, 3, 2.6, DigitalNet64InterlacedThree(s) );
-    plotter(Data)
-  """      
+    Data = RunSimulation(
+        s,
+        M,
+        N_lattice,
+        1,
+        0.6,
+        LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
+    )
+    writeOut(Data, 7)
+
+    Data = RunSimulation(s, M, N_net, 1, 0.6, DigitalNet64(s))
+    writeOut(Data, 8)
+
+    Data = RunSimulation(
+        s,
+        M,
+        N_lattice,
+        2,
+        1.6,
+        LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
+    )
+    writeOut(Data, 9)
+
+    Data = RunSimulation(s, M, N_net, 2, 1.6, DigitalNet64InterlacedTwo(s))
+    writeOut(Data, 10)
+
+    Data = RunSimulation(
+        s,
+        M,
+        N_lattice,
+        3,
+        2.6,
+        LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
+    )
+    writeOut(Data, 11)
+
+    Data = RunSimulation(s, M, N_net, 3, 2.6, DigitalNet64InterlacedThree(s))
+    writeOut(Data, 12)
+      """
 
     # dim = 3
     s = 3
-    Data = RunSimulation(s, M, N_lattice, 1, 0.6, LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))),s))
-  #  plotter(Data)
-    writeOut(Data,13)
+    Data = RunSimulation(
+        s,
+        M,
+        N_lattice,
+        1,
+        0.6,
+        LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
+    )
+    #  plotter(Data)
+    writeOut(Data, 13)
     Data = RunSimulation(s, M, N_net, 1, 0.6, DigitalNet64(s))
- #   plotter(Data)
-    writeOut(Data,14)
-    Data = RunSimulation(s, M, N_lattice, 2, 1.6, LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))),s))
- #   plotter(Data)
-    writeOut(Data,15)
+    #   plotter(Data)
+    writeOut(Data, 14)
+    Data = RunSimulation(
+        s,
+        M,
+        N_lattice,
+        2,
+        1.6,
+        LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
+    )
+    #   plotter(Data)
+    writeOut(Data, 15)
 
     Data = RunSimulation(s, M, N_net, 2, 1.6, DigitalNet64InterlacedTwo(s))
- #   plotter(Data)
-    writeOut(Data,16)
-    Data = RunSimulation(s, M, N_lattice, 3, 2.6, LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))),s))
- #   plotter(Data)
-    writeOut(Data,17)
+    #   plotter(Data)
+    writeOut(Data, 16)
+    Data = RunSimulation(
+        s,
+        M,
+        N_lattice,
+        3,
+        2.6,
+        LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
+    )
+    #   plotter(Data)
+    writeOut(Data, 17)
     Data = RunSimulation(s, M, N_net, 3, 2.6, DigitalNet64InterlacedThree(s))
- #   plotter(Data)
-    writeOut(Data,18)
+    #   plotter(Data)
+    writeOut(Data, 18)
+    """
 
 
 end # end of function main()
@@ -170,7 +244,7 @@ function RunSimulation(
     solutionsOnBox = zeros(length(N))
     correctionFactors = zeros(length(N))
     exactSol = 0
-    shiftAverages=zeros(M,length(N))
+    shiftAverages = zeros(M, length(N))
 
 
 
@@ -187,7 +261,7 @@ function RunSimulation(
     soll = 10000
     idx = 1
     for ell in N
-        println("Currently running sample number ",ell, " exponent ", log.(ell)./log(2))
+        println("Currently running sample number ", ell, " exponent ", log.(ell) ./ log(2))
         t = @elapsed begin
 
             cubature_error = 1000 # initalisation
@@ -244,7 +318,7 @@ function RunSimulation(
             QMC_R = abs.(G_fine) * (BoxBoundary * 2)^s
             G_fine = 0
             GC.gc()
-            shiftAverages[:,idx]=vec(reshape(QMC_R,M,1,1))
+            shiftAverages[:, idx] = vec(reshape(QMC_R, M, 1, 1))
 
 
 
@@ -312,7 +386,7 @@ function RunSimulation(
 
 
     data = hcat(
-        log.(N)./log(2),
+        log.(N) ./ log(2),
         N,
         boundsOfBoxes,
         QMCResults,
@@ -333,8 +407,8 @@ function RunSimulation(
     ])
 
     formatters = ft_printf(
-        ["%-3d","%-3d", "%16.8f", "%16.16f", "%.5e", "%16.16f", "%.5e", "%.5e"],
-        [1, 2, 3, 4, 5, 6, 7,8],
+        ["%-3d", "%-3d", "%16.8f", "%16.16f", "%.5e", "%16.16f", "%.5e", "%.5e"],
+        [1, 2, 3, 4, 5, 6, 7, 8],
     )
 
     pretty_table(data; header = header, formatters = formatters)
@@ -424,14 +498,17 @@ function plotter(Data::Dict)
     println("    ")
 
     figure()
-    plt.boxplot(Data[15],positions = Int64.(log.(Data[11])./log(2)),# Each column/cell is one box
-	notch=true, # Notched center
-	whis=0.75, # Whisker length as a percent of inner quartile range
-	widths=0.25, # Width of boxes
-	vert=true, # Horizontal boxes
-	sym="rs") # Symbol color and shape (rs = red square)
-  #  plt.yscale("log")
-  #  plt.xscale("log")
+    plt.boxplot(
+        Data[15],
+        positions = Int64.(log.(Data[11]) ./ log(2)),# Each column/cell is one box
+        notch = true, # Notched center
+        whis = 0.75, # Whisker length as a percent of inner quartile range
+        widths = 0.25, # Width of boxes
+        vert = true, # Horizontal boxes
+        sym = "rs",
+    ) # Symbol color and shape (rs = red square)
+    #  plt.yscale("log")
+    #  plt.xscale("log")
 
     title(str)
     ylabel("expected value")
@@ -439,14 +516,17 @@ function plotter(Data::Dict)
     savefig(string(str, "boxplot.png"))
 
     figure()
-    plt.boxplot(Data[15][:,(end-4):end],positions = Int64.(log.(Data[11][(end-4):end])./log(2)),# Each column/cell is one box
-	notch=true, # Notched center
-	whis=0.75, # Whisker length as a percent of inner quartile range
-	widths=0.25, # Width of boxes
-	vert=true, # Horizontal boxes
-	sym="rs") # Symbol color and shape (rs = red square)
-  #  plt.yscale("log")
-  #  plt.xscale("log")
+    plt.boxplot(
+        Data[15][:, (end-4):end],
+        positions = Int64.(log.(Data[11][(end-4):end]) ./ log(2)),# Each column/cell is one box
+        notch = true, # Notched center
+        whis = 0.75, # Whisker length as a percent of inner quartile range
+        widths = 0.25, # Width of boxes
+        vert = true, # Horizontal boxes
+        sym = "rs",
+    ) # Symbol color and shape (rs = red square)
+    #  plt.yscale("log")
+    #  plt.xscale("log")
 
     title(str)
     ylabel("expected value")
@@ -456,12 +536,12 @@ function plotter(Data::Dict)
 
 end
 
-function writeOut(Data::Dict,Number::Int64)
+function writeOut(Data::Dict, Number::Int64)
 
-    currentFolder= @__DIR__
-    Path = string(currentFolder,"/",Number,".jld2")
+    currentFolder = @__DIR__
+    Path = string(currentFolder, "/", Number, ".jld2")
     println(Path)
-    save(Path,"data",Data)
+    save(Path, "data", Data)
 
 
 end
