@@ -1,0 +1,9 @@
+
+Function on unit cube (set a = 1)
+
+fun(t,a) = (1 .+ abs.(a*sqrt(2)*erfinv.(2 .* t .-1)).^2.6) .* a .*exp.(-(erf.(2 .* t .- 1)) .^2 .* (a^2-1))
+
+Function on R
+
+
+

@@ -11,6 +11,7 @@ using Random
 using DelimitedFiles
 using JLD2
 using FileIO
+using PyPlot
 
 Φ⁻¹(x::T where {T<:Real}) = √2 * erfinv(2 * x - 1)
 
@@ -51,8 +52,8 @@ function main()
     #### Input parameters
     M = 64 # number of shifts
     alpha = 3
-    N_lattice = 2 .^ collect(4:1:20)
-    N_net = 2 .^ collect(4:1:25)
+    N_lattice = 2 .^ collect(4:1:15)
+    N_net = 2 .^ collect(4:1:15)
 
 
     #  generator = DigitalNet64InterlacedTwo(s)
@@ -65,6 +66,8 @@ function main()
     
     # dim = 1
     s = 1
+
+    """
     Data = RunSimulation(
         s,
         M,
@@ -90,7 +93,7 @@ function main()
 
     Data = RunSimulation(s, M, N_net, 2, 1.6, DigitalNet64InterlacedTwo(s))
     writeOut(Data, 4)
-
+    """
     Data = RunSimulation(
         s,
         M,
@@ -99,12 +102,12 @@ function main()
         2.6,
         LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
     )
-    writeOut(Data, 5)
+    plotter(Data)
 
     Data = RunSimulation(s, M, N_net, 3, 2.6, DigitalNet64InterlacedThree(s))
-    writeOut(Data, 6)
+    plotter(Data)
     
-    
+    """
     # dim = 2
     s = 2
     Data = RunSimulation(
@@ -145,7 +148,7 @@ function main()
 
     Data = RunSimulation(s, M, N_net, 3, 2.6, DigitalNet64InterlacedThree(s))
     writeOut(Data, 12)
-      """
+      
 
     # dim = 3
     s = 3
@@ -248,6 +251,11 @@ function RunSimulation(
 
 
 
+    #f(x, params) = prod(
+    #    (1 .+ abs.(x) .^ params) .* 1 / (sqrt(2 * pi)) .* exp.(-(x .^ 2) ./ 2),
+    #    dims = 1,
+    #)
+
     f(x, params) = prod(
         (1 .+ abs.(x) .^ params) .* 1 / (sqrt(2 * pi)) .* exp.(-(x .^ 2) ./ 2),
         dims = 1,
@@ -302,7 +310,7 @@ function RunSimulation(
 
 
 
-
+           
 
 
 
@@ -320,9 +328,13 @@ function RunSimulation(
             GC.gc()
             shiftAverages[:, idx] = vec(reshape(QMC_R, M, 1, 1))
 
+       
+
 
 
             QMC_Q = mean(QMC_R, dims = 3)
+   
+
             QMCResults[idx] = QMC_Q[1]
 
 

@@ -13,9 +13,11 @@ using DataFrames
 
 function main()
 
-    for id = 13:18
-        Data = load(string(@__DIR__,"/res/NoMapping/31082021/",id, ".jld2"))["data"]
-        plotter(Data)
+    path=string(@__DIR__,"/res/Mapping/09092021/a=100/")
+    for id = 1:18
+
+        Data = load(string(path,id, "_Inv.jld2"))["data"]
+        plotter(Data,path)
 
     end
 
@@ -23,7 +25,7 @@ function main()
 end
 
 
-function plotter(Data::Dict)
+function plotter(Data::Dict,path::String)
 
     timings = Data[2]
     trueErrors = Data[3]
@@ -86,7 +88,7 @@ function plotter(Data::Dict)
         "N^-3",
     ))
 
-    PyPlot.savefig(string(strname, ".png"))
+    PyPlot.savefig(string(path,strname, ".png"))
     println("    ")
     println("    ")
     println("    ")
