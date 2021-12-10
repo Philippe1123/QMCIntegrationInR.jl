@@ -35,7 +35,7 @@ IntRQMC_D_MultiLevel_v61.jl   ->   Improved mapping of function to the unit cube
 
 IntRQMC_D_MultiLevel_v7.jl   ->   Integration of the function in R with Niedereiter Xing sequences and HKKN lattice sequences
 
-** IntRQMC_D_MultiLevel_v8.jl   ->   Integration of the output of a 1D PDE (log diffusion) in R with Sobol' sequences and HKKN lattice sequences **
+**IntRQMC_D_MultiLevel_v8.jl   ->   Integration of the output of a 1D PDE (log diffusion) in R with Sobol' sequences and HKKN lattice sequences**
 
 IntRQMC_D_MultiLevel_v81.jl   ->   Integration of the output of a 1D PDE (log diffusion) in R with Sobol' sequences and HKKN lattice sequences, fixed number of samples, increasing domain
 
