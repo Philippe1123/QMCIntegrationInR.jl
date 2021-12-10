@@ -68,7 +68,7 @@ function main()
 
     s = 1
 
-
+"""
     Data = RunSimulation(
         s,
         M,
@@ -77,10 +77,10 @@ function main()
         0.6,
         LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
     )
-    writeOut(Data, "1_v5_res")
+    writeOut(Data, "1_v53_res")
 
     Data = RunSimulation(s, M, N_net, 1, 0.6, DigitalNet64(s))
-    writeOut(Data, "2_v5_res")
+    writeOut(Data, "2_v53_res")
 
     Data = RunSimulation(
         s,
@@ -90,10 +90,10 @@ function main()
         1.6,
         LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
     )
-    writeOut(Data, "3_v5_res")
+    writeOut(Data, "3_v53_res")
 
     Data = RunSimulation(s, M, N_net, 2, 1.6, DigitalNet64InterlacedTwo(s))
-    writeOut(Data, "4_v5_res")
+    writeOut(Data, "4_v53_res")
 
     Data = RunSimulation(
         s,
@@ -103,12 +103,12 @@ function main()
         2.6,
         LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
     )
-    writeOut(Data, "5_v5_res")
+    writeOut(Data, "5_v53_res")
 
     Data = RunSimulation(s, M, N_net, 3, 2.6, DigitalNet64InterlacedThree(s))
-    writeOut(Data, "6_v5_res")
+    writeOut(Data, "6_v53_res")
 
-"""
+
     # dim = 2
     s = 2
     Data = RunSimulation(
@@ -119,10 +119,10 @@ function main()
         0.6,
         LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
     )
-    writeOut(Data, 7)
+    writeOut(Data, "7_v53_res")
 
     Data = RunSimulation(s, M, N_net, 1, 0.6, DigitalNet64(s))
-    writeOut(Data, 8)
+    writeOut(Data, "8_v53_res")
 
     Data = RunSimulation(
         s,
@@ -132,10 +132,10 @@ function main()
         1.6,
         LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
     )
-    writeOut(Data, 9)
+    writeOut(Data, "9_v53_res")
 
     Data = RunSimulation(s, M, N_net, 2, 1.6, DigitalNet64InterlacedTwo(s))
-    writeOut(Data, 10)
+    writeOut(Data, "10_v53_res")
 
     Data = RunSimulation(
         s,
@@ -145,15 +145,16 @@ function main()
         2.6,
         LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
     )
-    writeOut(Data, 11)
+    writeOut(Data, "11_v53_res")
 
     Data = RunSimulation(s, M, N_net, 3, 2.6, DigitalNet64InterlacedThree(s))
-    writeOut(Data, 12)
-
+    writeOut(Data, "12_v53_res")
+    """
 
     # dim = 3
 
     s = 3
+    """
     Data = RunSimulation(
         s,
         M,
@@ -163,10 +164,11 @@ function main()
         LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
     )
     #  plotter(Data)
-    writeOut(Data, 13)
+    writeOut(Data, "13_v53_res")
+    """
     Data = RunSimulation(s, M, N_net, 1, 0.6, DigitalNet64(s))
-    #   plotter(Data)
-    writeOut(Data, 14)
+    writeOut(Data, "14_v53_res")
+    """
     Data = RunSimulation(
         s,
         M,
@@ -176,11 +178,11 @@ function main()
         LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
     )
     #   plotter(Data)
-    writeOut(Data, 15)
-
+    writeOut(Data, "15_v53_res")
+    """
     Data = RunSimulation(s, M, N_net, 2, 1.6, DigitalNet64InterlacedTwo(s))
     #   plotter(Data)
-    writeOut(Data, 16)
+    writeOut(Data, "16_v53_res")
     """
     Data = RunSimulation(
         s,
@@ -192,12 +194,12 @@ function main()
     )
 
     #   plotter(Data)
-    writeOut(Data, 17)
+    writeOut(Data, "17_v53_res")
     """
     Data = RunSimulation(s, M, N_net, 3, 2.6, DigitalNet64InterlacedThree(s))
     #   plotter(Data)
-    writeOut(Data, 18)
-    """
+    writeOut(Data, "18_v53_res")
+    
 
 
 end # end of function main()
@@ -273,6 +275,13 @@ function RunSimulation(
     #cubatureError = 10000
     soll = 10000
     idx = 1
+
+    dictOfShifts=Dict()
+
+    for shiftId = 1 :M
+        dictOfShifts[shiftId]=readdlm(string(string(@__DIR__),"/Sobol_alpha3/Sobol_alpha_3_",shiftId,"_cpp.txt"))
+    end
+
     for ell in N
         println("Currently running sample number ", ell, " exponent ", log.(ell) ./ log(2))
         t = @elapsed begin
@@ -297,13 +306,13 @@ function RunSimulation(
 
             Random.seed!(1234)
             for shiftId = 1:M
-                shiftedQMCGenerator = randomizedGenerator(QMCGenerator)
+                shiftedQMCGenerator = dictOfShifts[shiftId]
 
                 for id = 1:numberOfPointsBox
                     pointsBox[:, id, shiftId] =
                         map.(
                             x -> -BoxBoundary + (BoxBoundary - (-BoxBoundary)) * x,
-                            shiftedQMCGenerator[id-1],
+                            shiftedQMCGenerator[id,:],
                         )
                 end
 

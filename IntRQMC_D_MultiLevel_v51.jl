@@ -52,7 +52,7 @@ function main()
     #### Input parameters
     M = 64 # number of shifts
     alpha = 3
-    N_lattice = 2 .^ collect(4:1:20)
+    N_lattice = 2 .^ collect(4:1:10)
     N_net = 2 .^ collect(4:1:20)
 
 
@@ -77,10 +77,10 @@ function main()
         0.6,
         LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
     )
-    writeOut(Data, "1_v5_res")
-
+    writeOut(Data, "1_v51_res")
+"""
     Data = RunSimulation(s, M, N_net, 1, 0.6, DigitalNet64(s))
-    writeOut(Data, "2_v5_res")
+    writeOut(Data, "2_v51_res")
 
     Data = RunSimulation(
         s,
@@ -90,11 +90,11 @@ function main()
         1.6,
         LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
     )
-    writeOut(Data, "3_v5_res")
+    writeOut(Data, "3_v51_res")
 
     Data = RunSimulation(s, M, N_net, 2, 1.6, DigitalNet64InterlacedTwo(s))
-    writeOut(Data, "4_v5_res")
-
+    writeOut(Data, "4_v51_res")
+"""
     Data = RunSimulation(
         s,
         M,
@@ -103,12 +103,12 @@ function main()
         2.6,
         LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
     )
-    writeOut(Data, "5_v5_res")
-
-    Data = RunSimulation(s, M, N_net, 3, 2.6, DigitalNet64InterlacedThree(s))
-    writeOut(Data, "6_v5_res")
-
+    writeOut(Data, "5_v51_res")
 """
+    Data = RunSimulation(s, M, N_net, 3, 2.6, DigitalNet64InterlacedThree(s))
+    writeOut(Data, "6_v51_res")
+
+
     # dim = 2
     s = 2
     Data = RunSimulation(
@@ -119,10 +119,10 @@ function main()
         0.6,
         LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
     )
-    writeOut(Data, 7)
+    writeOut(Data, "7_v51_res")
 
     Data = RunSimulation(s, M, N_net, 1, 0.6, DigitalNet64(s))
-    writeOut(Data, 8)
+    writeOut(Data, "8_v51_res")
 
     Data = RunSimulation(
         s,
@@ -132,10 +132,10 @@ function main()
         1.6,
         LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
     )
-    writeOut(Data, 9)
+    writeOut(Data, "9_v51_res")
 
     Data = RunSimulation(s, M, N_net, 2, 1.6, DigitalNet64InterlacedTwo(s))
-    writeOut(Data, 10)
+    writeOut(Data, "10_v51_res")
 
     Data = RunSimulation(
         s,
@@ -145,15 +145,16 @@ function main()
         2.6,
         LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
     )
-    writeOut(Data, 11)
+    writeOut(Data, "11_v51_res")
 
     Data = RunSimulation(s, M, N_net, 3, 2.6, DigitalNet64InterlacedThree(s))
-    writeOut(Data, 12)
-
+    writeOut(Data, "12_v51_res")
+    """
 
     # dim = 3
 
     s = 3
+    """
     Data = RunSimulation(
         s,
         M,
@@ -163,10 +164,11 @@ function main()
         LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
     )
     #  plotter(Data)
-    writeOut(Data, 13)
+    writeOut(Data, "13_v51_res")
+    
     Data = RunSimulation(s, M, N_net, 1, 0.6, DigitalNet64(s))
-    #   plotter(Data)
-    writeOut(Data, 14)
+    writeOut(Data, "14_v51_res")
+    
     Data = RunSimulation(
         s,
         M,
@@ -176,12 +178,11 @@ function main()
         LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
     )
     #   plotter(Data)
-    writeOut(Data, 15)
-
+    writeOut(Data, "15_v51_res")
+    
     Data = RunSimulation(s, M, N_net, 2, 1.6, DigitalNet64InterlacedTwo(s))
     #   plotter(Data)
-    writeOut(Data, 16)
-    """
+    writeOut(Data, "16_v51_res")
     Data = RunSimulation(
         s,
         M,
@@ -192,11 +193,10 @@ function main()
     )
 
     #   plotter(Data)
-    writeOut(Data, 17)
-    """
+    writeOut(Data, "17_v51_res")
     Data = RunSimulation(s, M, N_net, 3, 2.6, DigitalNet64InterlacedThree(s))
     #   plotter(Data)
-    writeOut(Data, 18)
+    writeOut(Data, "18_v51_res")
     """
 
 
@@ -288,7 +288,7 @@ function RunSimulation(
 
 
             numberOfPointsBox = ell
-            pointsBox = zeros(s, numberOfPointsBox, M)
+            pointsBox = zeros(s,  N[end], M)
 
             # We first generate *all* the points for all the shifts...
             BoxBoundary = sqrt(2 * alpha * log(numberOfPointsBox))
@@ -299,7 +299,7 @@ function RunSimulation(
             for shiftId = 1:M
                 shiftedQMCGenerator = randomizedGenerator(QMCGenerator)
 
-                for id = 1:numberOfPointsBox
+                for id = 1: N[end]
                     pointsBox[:, id, shiftId] =
                         map.(
                             x -> -BoxBoundary + (BoxBoundary - (-BoxBoundary)) * x,
@@ -404,7 +404,7 @@ function RunSimulation(
 
     data = hcat(
         log.(N) ./ log(2),
-        N,
+        N[end].*ones(length(N),1),
         boundsOfBoxes,
         QMCResults,
         trueErrors,

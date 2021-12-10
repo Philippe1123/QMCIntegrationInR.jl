@@ -1,7 +1,6 @@
 using DigitalNets
 using LatticeRules
 
-#using PyPlot
 
 using Statistics: mean, std
 using SpecialFunctions: erf, erfinv, gamma, gamma_inc
@@ -14,31 +13,15 @@ using FileIO
 using PyPlot
 
 Φ⁻¹(x::T where {T<:Real}) = √2 * erfinv(2 * x - 1)
+Φ⁻¹(x::T where {T<:Real},σ::T where {T<:Real}) = √2 * erfinv(2 * x - 1) * σ
 
 Φ(x::T where {T<:Real}) = 1 / 2 * (1 + erf(x / √2))
+Φ(x::T where {T<:Real},σ::T where {T<:Real}) = 1 / 2 * (1 + erf(x /(σ * √2)))
+cdfNorm(x::T where {T<:Real}) = 1 / (sqrt(2 * pi)) .* exp.(-(x .^ 2) ./ 2)
 
-
-
-#funTransform = (x, y) -> transform(MultilevelEstimators.Uniform(-y,y), x)
 
 
 #analytical_sol(a::Real,s::Int64) = ((gamma(4/5)/(2^(1/5))-gamma(4/5)*gamma_inc(4/5,a^2/2,0)[2]/(2^(1/5)))*2/sqrt(2*pi)+(Φ(a) - Φ(-a)))^s
-#analytical_sol(a::Real, s::Int64, params::Float64) =
-#    params == 0.6 ?
-#    (
-#        (
-#            gamma(4 / 5) / (2^(1 / 5)) -
-#            gamma(4 / 5) * gamma_inc(4 / 5, a^2 / 2, 0)[2] / (2^(1 / 5))
-#        ) * 2 / sqrt(2 * pi) + (Φ(a) - Φ(-a))
-#    )^s :
-#    params == 2.6 ?
-#    (
-#        (
-#            gamma(9 / 5) * (2^(4 / 5)) -
-#            gamma(9 / 5) * gamma_inc(9 / 5, a^2 / 2, 0)[2] * (2^(4 / 5))
-#        ) * 2 / sqrt(2 * pi) + (Φ(a) - Φ(-a))
-#    )^s : 1
-
 analytical_sol(a::Real, s::Int64, sigma::Real) =
     (
         (
@@ -47,160 +30,166 @@ analytical_sol(a::Real, s::Int64, sigma::Real) =
         ) * 2^(sigma / 2) / sqrt(pi) + erf(a / sqrt(2))
     )^s
 
-function main()
-
-    #### Input parameters
-    M = 64 # number of shifts
-    alpha = 3
-    N_lattice = 2 .^ collect(4:1:20)
-    N_net = 2 .^ collect(4:1:20)
 
 
-    #  generator = DigitalNet64InterlacedTwo(s)
-    #generator = DigitalNet64InterlacedThree(s)
+    function main()
 
-    #generator = LatticeRule(s)
-
-    #generator = DigitalNet64(s)
-
-
-    # dim = 1
-
-    s = 1
+        #### Input parameters
+        M = 64 # number of shifts
+        N_lattice = 2 .^ collect(4:1:20)
+        N_net = 2 .^ collect(4:1:20)
 
 
-    Data = RunSimulation(
-        s,
-        M,
-        N_lattice,
-        1,
-        0.6,
-        LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
-    )
-    writeOut(Data, "1_v5_res")
+        #  generator = DigitalNet64InterlacedTwo(s)
+        #generator = DigitalNet64InterlacedThree(s)
 
-    Data = RunSimulation(s, M, N_net, 1, 0.6, DigitalNet64(s))
-    writeOut(Data, "2_v5_res")
+        #generator = LatticeRule(s)
 
-    Data = RunSimulation(
-        s,
-        M,
-        N_lattice,
-        2,
-        1.6,
-        LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
-    )
-    writeOut(Data, "3_v5_res")
+        #generator = DigitalNet64(s)
 
-    Data = RunSimulation(s, M, N_net, 2, 1.6, DigitalNet64InterlacedTwo(s))
-    writeOut(Data, "4_v5_res")
 
-    Data = RunSimulation(
-        s,
-        M,
-        N_lattice,
-        3,
-        2.6,
-        LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
-    )
-    writeOut(Data, "5_v5_res")
+        # dim = 1
+        a_param_vec = 1.0:1.0:10.0
+        for a_param in a_param_vec
+            """
+        s = 1
 
-    Data = RunSimulation(s, M, N_net, 3, 2.6, DigitalNet64InterlacedThree(s))
-    writeOut(Data, "6_v5_res")
+            
+        Data = RunSimulation(
+            s,
+            M,
+            N_lattice,
+            1,
+            0.6,
+            a_param,
+            LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),true
+        )
+        writeOut(Data, string("1_v61_res_",a_param))
+         
+        Data = RunSimulation(s, M, N_net, 1, 0.6, a_param,DigitalNet64(s),true)
+        writeOut(Data, "2_v61_res")
 
+        Data = RunSimulation(
+            s,
+            M,
+            N_lattice,
+            2,
+            1.6,
+            a_param,
+            LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),true
+        )
+        writeOut(Data, "3_v61_res")
+
+        Data = RunSimulation(s, M, N_net, 2, 1.6, a_param,DigitalNet64InterlacedTwo(s),true)
+        writeOut(Data, "4_v61_res")
+        Data = RunSimulation(
+            s,
+            M,
+            N_lattice,
+            3,
+            2.6,
+            a_param,
+            LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),true
+        )
+        writeOut(Data, "5_v61_res")
+
+        Data = RunSimulation(s, M, N_net, 3, 2.6,a_param, DigitalNet64InterlacedThree(s),true)
+        writeOut(Data, "6_v61_res")
+
+
+       # dim = 2
+        s = 2
+        Data = RunSimulation(
+            s,
+            M,
+            N_lattice,
+            1,
+            0.6,
+            a_param,
+            LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),true
+        )
+        writeOut(Data, "7_Inv")
+
+        Data = RunSimulation(s, M, N_net, 1, 0.6,a_param, DigitalNet64(s),true)
+        writeOut(Data, "8_Inv")
+
+
+        Data = RunSimulation(
+            s,
+            M,
+            N_lattice,
+            2,
+            1.6,
+            a_param,
+            LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),true
+        )
+        writeOut(Data, "9_Inv")
+
+        Data = RunSimulation(s, M, N_net, 2, 1.6,a_param, DigitalNet64InterlacedTwo(s),true)
+        writeOut(Data, "10_Inv")
+
+        Data = RunSimulation(
+            s,
+            M,
+            N_lattice,
+            3,
+            2.6,
+            a_param,
+            LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),true
+        )
+        writeOut(Data, "11_Inv")
+
+        Data = RunSimulation(s, M, N_net, 3, 2.6,a_param, DigitalNet64InterlacedThree(s),true)
+        writeOut(Data, "12_Inv")
+
+
+        # dim = 3
+        """
+        s = 3
 """
-    # dim = 2
-    s = 2
-    Data = RunSimulation(
-        s,
-        M,
-        N_lattice,
-        1,
-        0.6,
-        LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
-    )
-    writeOut(Data, 7)
+        Data = RunSimulation(
+            s,
+            M,
+            N_lattice,
+            1,
+            0.6,
+            a_param,
+            LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),true
+        )
+        writeOut(Data, "13_Inv")
+        Data = RunSimulation(s, M, N_net, 1, 0.6, a_param,DigitalNet64(s),true)
+        writeOut(Data, "14_Inv")
+        Data = RunSimulation(
+            s,
+            M,
+            N_lattice,
+            2,
+            1.6,
+            a_param,
+            LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),true
+        )
+        writeOut(Data, "15_Inv")
 
-    Data = RunSimulation(s, M, N_net, 1, 0.6, DigitalNet64(s))
-    writeOut(Data, 8)
+        Data = RunSimulation(s, M, N_net, 2, 1.6, a_param,DigitalNet64InterlacedTwo(s),true)
+        writeOut(Data, "16_Inv")
+"""
+        Data = RunSimulation(
+            s,
+            M,
+            N_lattice,
+            3,
+            2.6,
+            a_param,
+            LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),true
+        )
+        writeOut(Data, string("17_v61_res_",a_param))
+"""
+        Data = RunSimulation(s, M, N_net, 3, 2.6, a_param,DigitalNet64InterlacedThree(s),true)
+        writeOut(Data, "18_Inv")
+"""
 
-    Data = RunSimulation(
-        s,
-        M,
-        N_lattice,
-        2,
-        1.6,
-        LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
-    )
-    writeOut(Data, 9)
-
-    Data = RunSimulation(s, M, N_net, 2, 1.6, DigitalNet64InterlacedTwo(s))
-    writeOut(Data, 10)
-
-    Data = RunSimulation(
-        s,
-        M,
-        N_lattice,
-        3,
-        2.6,
-        LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
-    )
-    writeOut(Data, 11)
-
-    Data = RunSimulation(s, M, N_net, 3, 2.6, DigitalNet64InterlacedThree(s))
-    writeOut(Data, 12)
-
-
-    # dim = 3
-
-    s = 3
-    Data = RunSimulation(
-        s,
-        M,
-        N_lattice,
-        1,
-        0.6,
-        LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
-    )
-    #  plotter(Data)
-    writeOut(Data, 13)
-    Data = RunSimulation(s, M, N_net, 1, 0.6, DigitalNet64(s))
-    #   plotter(Data)
-    writeOut(Data, 14)
-    Data = RunSimulation(
-        s,
-        M,
-        N_lattice,
-        2,
-        1.6,
-        LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
-    )
-    #   plotter(Data)
-    writeOut(Data, 15)
-
-    Data = RunSimulation(s, M, N_net, 2, 1.6, DigitalNet64InterlacedTwo(s))
-    #   plotter(Data)
-    writeOut(Data, 16)
-    """
-    Data = RunSimulation(
-        s,
-        M,
-        N_lattice,
-        3,
-        2.6,
-        LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
-    )
-
-    #   plotter(Data)
-    writeOut(Data, 17)
-    """
-    Data = RunSimulation(s, M, N_net, 3, 2.6, DigitalNet64InterlacedThree(s))
-    #   plotter(Data)
-    writeOut(Data, 18)
-    """
-
-
-end # end of function main()
+        end
+    end # end of function main()
 
 
 ## Quick and dirty solution for the "isa" problem (needs to be fixed in a more decent matter)
@@ -232,7 +221,9 @@ function RunSimulation(
     N::Vector,
     alpha::Int64,
     params::Float64,
+    a::Float64,
     QMCGenerator::Union{DigitalNet64,LatticeRule},
+    correctionFactor::Bool,
 )
 
     QMCType = labelThisGenerator(QMCGenerator)
@@ -254,17 +245,7 @@ function RunSimulation(
     exactSol = 0
     shiftAverages = zeros(M, length(N))
 
-
-
-    #f(x, params) = prod(
-    #    (1 .+ abs.(x) .^ params) .* 1 / (sqrt(2 * pi)) .* exp.(-(x .^ 2) ./ 2),
-    #    dims = 1,
-    #)
-
-    f(x, params) = prod(
-        (1 .+ abs.(x) .^ params) .* 1 / (sqrt(2 * pi)) .* exp.(-(x .^ 2) ./ 2),
-        dims = 1,
-    )
+    f(x, params, a) = prod((1 .+ abs.(a*x) .^ params) .* a .* exp.(-x.^2 ./ 2 .* (a^2-1)), dims = 1)
 
 
     # why do these two variables need to be declared here? can't we rewrite the logic?
@@ -275,6 +256,7 @@ function RunSimulation(
     idx = 1
     for ell in N
         println("Currently running sample number ", ell, " exponent ", log.(ell) ./ log(2))
+
         t = @elapsed begin
 
             cubature_error = 1000 # initalisation
@@ -289,11 +271,13 @@ function RunSimulation(
 
             numberOfPointsBox = ell
             pointsBox = zeros(s, numberOfPointsBox, M)
+            pointsBox_unmapped = zeros(s, numberOfPointsBox, M)
 
             # We first generate *all* the points for all the shifts...
-            BoxBoundary = sqrt(2 * alpha * log(numberOfPointsBox))
-            boundsOfBoxes[idx] = BoxBoundary
+#            BoxBoundary = sqrt(2 * alpha * log(2^30))
+            BoxBoundary = 20
 
+            boundsOfBoxes[idx] = BoxBoundary
 
             Random.seed!(1234)
             for shiftId = 1:M
@@ -302,50 +286,58 @@ function RunSimulation(
                 for id = 1:numberOfPointsBox
                     pointsBox[:, id, shiftId] =
                         map.(
-                            x -> -BoxBoundary + (BoxBoundary - (-BoxBoundary)) * x,
+                            x -> Φ⁻¹(
+                                Φ(-BoxBoundary,1) + (Φ(BoxBoundary,1) - Φ(-BoxBoundary,1)) * x,1.
+                            ),
                             shiftedQMCGenerator[id-1],
                         )
+                        pointsBox_unmapped[:, id, shiftId]=shiftedQMCGenerator[id-1]
+
+
                 end
-
-
-
             end
 
 
 
 
-
-
-
-
-
-
             # pointsBox is s-by-N-by-M --f--> 1-by-N-by-M
-            G_fine = mean(f(pointsBox, params), dims = 2) # 1-by-1-by-M
-            pointsBox = 0
+            G_fine = mean(f(pointsBox,params,a), dims = 2) # 1-by-1-by-M
+#            pointsBox = 0
             GC.gc()
 
+ #           println(pointsBox)
+ #           sleep(1.0)
+ """
+            figure()
+            res=f(pointsBox,params)
+            for ip=1:size(pointsBox,2)
+                plot(pointsBox[1,ip, 1],res[1,ip,1],"*k")
+            end
 
+            figure()
+            for ip=1:size(pointsBox,2)
+                plot(pointsBox[1,ip, 1],"*k")
+                sleep(0.01)
+            end
+            """
 
+            corrfactor_fine =
+                correctionFactor == true ? (Φ(BoxBoundary,1.) - Φ(-BoxBoundary,1.))^s : 1
 
-            QMC_R = abs.(G_fine) * (BoxBoundary * 2)^s
+            QMC_R = abs.(G_fine) * (corrfactor_fine)
             G_fine = 0
             GC.gc()
             shiftAverages[:, idx] = vec(reshape(QMC_R, M, 1, 1))
 
 
-
-
-
             QMC_Q = mean(QMC_R, dims = 3)
-
-
             QMCResults[idx] = QMC_Q[1]
 
 
             QMC_std = std(QMC_R) / sqrt(M)
             QMC_R = 0
             GC.gc()
+
 
 
             cubature_error = QMC_std
@@ -362,27 +354,13 @@ function RunSimulation(
             totError = abs(exactSol - QMC_Q[1]) ./ exactSol
 
 
-            # println("Levels needed ", ell)
-            # println("samples needed on finest level ", ell)
-            # println("box is ", BoxBoundary)
-            # println("exact solution on given box is ", exactSolOnBox)
-            # println("solution is ", QMC_Q[1])
-            # println("exact solution  is ", exactSol)
-            # println("Estimated rel Cubature error is ", cubature_error)
-            # println("Exact rel Cubature error is ", exactCubatureError)
-            # println("Estimated rel Truncation error is ", truncation_error)
-            # println("Exact rel Truncation error is ", exactTruncationError)
-            # println("total rel error is ", totError)
 
 
 
 
         end # end of @elapsed
 
-        #println("Runtime is ", t, " sec")
-        #println(
-        #    "******************************************************************************",
-        #)
+
         correctionFactors[idx] = corrfactor_fine
         estimatedTruncationErrors[idx] = truncation_error
         estimatedCubatureErrors[idx] = cubature_error
@@ -400,6 +378,7 @@ function RunSimulation(
     println("stochastic dimensions is equal to ", s)
     println("params is equal to ", params)
     println("number of shifts is ", M)
+    println("Correction factor enabled ?", correctionFactor)
 
 
     data = hcat(
@@ -411,6 +390,7 @@ function RunSimulation(
         solutionsOnBox,
         trueTruncationErrors,
         trueCubatureErrors,
+        correctionFactors,
     )
     header = ([
         "m",
@@ -421,11 +401,12 @@ function RunSimulation(
         "Iab",
         "trunc rel error (exact)",
         "box cub rel error (exact)",
+        "Corr. fact"
     ])
 
     formatters = ft_printf(
-        ["%-3d", "%-3d", "%16.8f", "%16.16f", "%.5e", "%16.16f", "%.5e", "%.5e"],
-        [1, 2, 3, 4, 5, 6, 7, 8],
+        ["%-3d", "%-3d", "%16.8f", "%16.16f", "%.5e", "%16.16f", "%.5e", "%.5e","%16.8f"],
+        [1, 2, 3, 4, 5, 6, 7, 8,9],
     )
 
     pretty_table(data; header = header, formatters = formatters)
@@ -447,7 +428,7 @@ function RunSimulation(
     Data[13] = params
     Data[14] = alpha
     Data[15] = shiftAverages
-
+    Data[16] = a
     return Data
 end
 
@@ -469,6 +450,7 @@ function plotter(Data::Dict)
 
     figure()
     loglog(nbOfSamples, trueErrors, "-ks")
+    println(timings)
     #loglog(nbOfSamples, abs.(estimatedCubatureErrors), "-r*")
     loglog(nbOfSamples, abs.(trueCubatureErrors), "-rs")
     #loglog(nbOfSamples, abs.(estimatedTruncationErrors), "-g*")
@@ -488,10 +470,10 @@ function plotter(Data::Dict)
         ", params = ",
         Data[13],
         ", alpha = ",
-        Data[14],
+        Data[14]
     )
     title(str)
-    ylabel("Rel. error")
+    ylabel("Abs. error")
     xlabel("N")
     legend((
         "true error",
@@ -501,57 +483,15 @@ function plotter(Data::Dict)
         "N^-2",
         "N^-3",
     ))
-
-    savefig(string(str, ".png"))
-    println("    ")
-    println("    ")
-    println("    ")
-    println("    ")
-    println("    ")
-    println("    ")
-    println("    ")
-    println("    ")
-    println("    ")
-    println("    ")
-
-    figure()
-    plt.boxplot(
-        Data[15],
-        positions = Int64.(log.(Data[11]) ./ log(2)),# Each column/cell is one box
-        notch = true, # Notched center
-        whis = 0.75, # Whisker length as a percent of inner quartile range
-        widths = 0.25, # Width of boxes
-        vert = true, # Horizontal boxes
-        sym = "rs",
-    ) # Symbol color and shape (rs = red square)
-    #  plt.yscale("log")
-    #  plt.xscale("log")
-
-    title(str)
-    ylabel("expected value")
-    xlabel("log 2 of number of samples")
-    savefig(string(str, "boxplot.png"))
-
-    figure()
-    plt.boxplot(
-        Data[15][:, (end-4):end],
-        positions = Int64.(log.(Data[11][(end-4):end]) ./ log(2)),# Each column/cell is one box
-        notch = true, # Notched center
-        whis = 0.75, # Whisker length as a percent of inner quartile range
-        widths = 0.25, # Width of boxes
-        vert = true, # Horizontal boxes
-        sym = "rs",
-    ) # Symbol color and shape (rs = red square)
-    #  plt.yscale("log")
-    #  plt.xscale("log")
-
-    title(str)
-    ylabel("expected value")
-    xlabel("log 2 of number of samples")
-    savefig(string(str, "boxplot_zoom.png"))
+    println(estimatedTruncationErrors)
+    println(estimatedCubatureErrors)
+    println(trueTruncationErrors)
+    println(trueCubatureErrors)
+    savefig(string(str,".png"))
 
 
 end
+
 
 function writeOut(Data::Dict, str::String)
 

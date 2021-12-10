@@ -1,0 +1,145 @@
+include("IntRQMC_D_MultiLevel_v8.jl")
+Currently running sample number 16 exponent 4.0
+Currently running sample number 32 exponent 5.0
+Currently running sample number 64 exponent 6.0
+Currently running sample number 128 exponent 7.0
+Currently running sample number 256 exponent 8.0
+Currently running sample number 512 exponent 9.0
+Currently running sample number 1024 exponent 10.0
+Currently running sample number 2048 exponent 11.0
+Currently running sample number 4096 exponent 12.0
+Currently running sample number 8192 exponent 13.0
+Currently running sample number 16384 exponent 14.0
+Currently running sample number 32768 exponent 15.0
+Currently running sample number 65536 exponent 16.0
+Currently running sample number 131072 exponent 17.0
+Currently running sample number 262144 exponent 18.0
+Currently running sample number 524288 exponent 19.0
+Currently running sample number 1048576 exponent 20.0
+Lattice
+alpha is 1
+exact solution is 1.8086726247742881
+stochastic dimensions is equal to 1
+params is equal to 0.6
+number of shifts is 4
+┌─────┬─────────┬──────────────────┬────────────────────┬───────────────┬─────────────────────┬─────────────────────────┬───────────────────────────┐
+│   m │       n │                a │                  Q │ tot rel error │                 Iab │ trunc rel error (exact) │ box cub rel error (exact) │
+├─────┼─────────┼──────────────────┼────────────────────┼───────────────┼─────────────────────┼─────────────────────────┼───────────────────────────┤
+│ 4   │     16  │       2.35482005 │ 0.5852690557962251 │   7.98167e-03 │ -1.0000000000000000 │             1.55289e+00 │               2.70862e+00 │
+│ 5   │     32  │       2.63276885 │ 0.6472866962855570 │   7.98740e-03 │ -1.0000000000000000 │             1.55289e+00 │               2.54491e+00 │
+│ 6   │     64  │       2.88405377 │ 0.7192330736746606 │   3.40750e-03 │ -1.0000000000000000 │             1.55289e+00 │               2.39037e+00 │
+│ 7   │     128 │       3.11513411 │ 0.7659445582844119 │   1.42259e-03 │ -1.0000000000000000 │             1.55289e+00 │               2.30558e+00 │
+│ 8   │     256 │       3.33021844 │ 0.8018689877223668 │   6.61740e-04 │ -1.0000000000000000 │             1.55289e+00 │               2.24709e+00 │
+│ 9   │     512 │       3.53223007 │ 0.8274925192524655 │   1.36479e-04 │ -1.0000000000000000 │             1.55289e+00 │               2.20847e+00 │
+│ 10  │    1024 │       3.72329741 │ 0.8457474517323136 │   1.04850e-04 │ -1.0000000000000000 │             1.55289e+00 │               2.18239e+00 │
+│ 11  │    2048 │       3.90502727 │ 0.8580364996922012 │   2.77534e-05 │ -1.0000000000000000 │             1.55289e+00 │               2.16545e+00 │
+│ 12  │    4096 │       4.07866796 │ 0.8664430397968657 │   1.20624e-05 │ -1.0000000000000000 │             1.55289e+00 │               2.15414e+00 │
+│ 13  │    8192 │       4.24521221 │ 0.8721282472113649 │   4.36796e-06 │ -1.0000000000000000 │             1.55289e+00 │               2.14662e+00 │
+│ 14  │   16384 │       4.40546491 │ 0.8759218967948806 │   7.73930e-07 │ -1.0000000000000000 │             1.55289e+00 │               2.14165e+00 │
+│ 15  │   32768 │       4.56008941 │ 0.8784284341475894 │   5.45975e-07 │ -1.0000000000000000 │             1.55289e+00 │               2.13840e+00 │
+│ 16  │   65536 │       4.70964009 │ 0.8800735200106224 │   2.21363e-07 │ -1.0000000000000000 │             1.55289e+00 │               2.13627e+00 │
+│ 17  │  131072 │       4.85458589 │ 0.8811445755858605 │   6.85685e-08 │ -1.0000000000000000 │             1.55289e+00 │               2.13489e+00 │
+│ 18  │  262144 │       4.99532767 │ 0.8818366916195799 │   1.70293e-08 │ -1.0000000000000000 │             1.55289e+00 │               2.13400e+00 │
+│ 19  │  524288 │       5.13221130 │ 0.8822811420863067 │   5.52707e-09 │ -1.0000000000000000 │             1.55289e+00 │               2.13343e+00 │
+│ 20  │ 1048576 │       5.26553770 │ 0.8825648549718502 │   2.42670e-09 │ -1.0000000000000000 │             1.55289e+00 │               2.13306e+00 │
+└─────┴─────────┴──────────────────┴────────────────────┴───────────────┴─────────────────────┴─────────────────────────┴───────────────────────────┘
+/home/philippe/.julia/dev/QMCIntegrationInR/1_v8_res.jld2
+Currently running sample number 16 exponent 4.0
+Currently running sample number 32 exponent 5.0
+Currently running sample number 64 exponent 6.0
+Currently running sample number 128 exponent 7.0
+Currently running sample number 256 exponent 8.0
+Currently running sample number 512 exponent 9.0
+Currently running sample number 1024 exponent 10.0
+Currently running sample number 2048 exponent 11.0
+Currently running sample number 4096 exponent 12.0
+Currently running sample number 8192 exponent 13.0
+Currently running sample number 16384 exponent 14.0
+Currently running sample number 32768 exponent 15.0
+Currently running sample number 65536 exponent 16.0
+Currently running sample number 131072 exponent 17.0
+Currently running sample number 262144 exponent 18.0
+Currently running sample number 524288 exponent 19.0
+Currently running sample number 1048576 exponent 20.0
+Lattice
+alpha is 3
+exact solution is 2.293876199638861
+stochastic dimensions is equal to 1
+params is equal to 2.6
+number of shifts is 4
+┌─────┬─────────┬──────────────────┬────────────────────┬───────────────┬─────────────────────┬─────────────────────────┬───────────────────────────┐
+│   m │       n │                a │                  Q │ tot rel error │                 Iab │ trunc rel error (exact) │ box cub rel error (exact) │
+├─────┼─────────┼──────────────────┼────────────────────┼───────────────┼─────────────────────┼─────────────────────────┼───────────────────────────┤
+│ 4   │     16  │       4.07866796 │ 0.8709561570491045 │   1.27898e-03 │ -1.0000000000000000 │             1.43594e+00 │               2.14816e+00 │
+│ 5   │     32  │       4.56008941 │ 0.8781504714907443 │   6.33839e-04 │ -1.0000000000000000 │             1.43594e+00 │               2.13876e+00 │
+│ 6   │     64  │       4.99532767 │ 0.8819018906612305 │   9.64898e-05 │ -1.0000000000000000 │             1.43594e+00 │               2.13391e+00 │
+│ 7   │     128 │       5.39557055 │ 0.8827416796733143 │   1.44522e-05 │ -1.0000000000000000 │             1.43594e+00 │               2.13283e+00 │
+│ 8   │     256 │       5.76810755 │ 0.8829739767286060 │   2.32618e-06 │ -1.0000000000000000 │             1.43594e+00 │               2.13254e+00 │
+│ 9   │     512 │       6.11800194 │ 0.8830305608542719 │   1.62249e-07 │ -1.0000000000000000 │             1.43594e+00 │               2.13246e+00 │
+│ 10  │    1024 │       6.44894029 │ 0.8830439618159036 │   4.04714e-08 │ -1.0000000000000000 │             1.43594e+00 │               2.13245e+00 │
+│ 11  │    2048 │       6.76370564 │ 0.8830469027331588 │   3.49260e-09 │ -1.0000000000000000 │             1.43594e+00 │               2.13244e+00 │
+│ 12  │    4096 │       7.06446014 │ 0.8830475600691048 │   4.91235e-10 │ -1.0000000000000000 │             1.43594e+00 │               2.13244e+00 │
+│ 13  │    8192 │       7.35292323 │ 0.8830477033470163 │   5.67714e-11 │ -1.0000000000000000 │             1.43594e+00 │               2.13244e+00 │
+│ 14  │   16384 │       7.63048905 │ 0.8830477337944038 │   3.18311e-12 │ -1.0000000000000000 │             1.43594e+00 │               2.13244e+00 │
+│ 15  │   32768 │       7.89830654 │ 0.8830477401466041 │   7.05407e-13 │ -1.0000000000000000 │             1.43594e+00 │               2.13244e+00 │
+│ 16  │   65536 │       8.15733592 │ 0.8830477414531849 │   8.91451e-14 │ -1.0000000000000000 │             1.43594e+00 │               2.13244e+00 │
+│ 17  │  131072 │       8.40838941 │ 0.8830477417177101 │   8.50245e-15 │ -1.0000000000000000 │             1.43594e+00 │               2.13244e+00 │
+│ 18  │  262144 │       8.65216132 │ 0.8830477417705056 │   6.60715e-16 │ -1.0000000000000000 │             1.43594e+00 │               2.13244e+00 │
+│ 19  │  524288 │       8.88925073 │ 0.8830477417809153 │   9.06493e-17 │ -1.0000000000000000 │             1.43594e+00 │               2.13244e+00 │
+│ 20  │ 1048576 │       9.12017882 │ 0.8830477417829443 │   0.00000e+00 │ -1.0000000000000000 │             1.43594e+00 │               2.13244e+00 │
+└─────┴─────────┴──────────────────┴────────────────────┴───────────────┴─────────────────────┴─────────────────────────┴───────────────────────────┘
+/home/philippe/.julia/dev/QMCIntegrationInR/5_v8_res.jld2
+Currently running sample number 16 exponent 4.0
+Currently running sample number 32 exponent 5.0
+Currently running sample number 64 exponent 6.0
+Currently running sample number 128 exponent 7.0
+Currently running sample number 256 exponent 8.0
+Currently running sample number 512 exponent 9.0
+Currently running sample number 1024 exponent 10.0
+Currently running sample number 2048 exponent 11.0
+Currently running sample number 4096 exponent 12.0
+Currently running sample number 8192 exponent 13.0
+Currently running sample number 16384 exponent 14.0
+Currently running sample number 32768 exponent 15.0
+Currently running sample number 65536 exponent 16.0
+Currently running sample number 131072 exponent 17.0
+Currently running sample number 262144 exponent 18.0
+Currently running sample number 524288 exponent 19.0
+Currently running sample number 1048576 exponent 20.0
+Lattice
+alpha is 3
+exact solution is 2.293876199638861
+stochastic dimensions is equal to 1
+params is equal to 2.6
+number of shifts is 4
+┌─────┬─────────┬──────────────────┬────────────────────┬───────────────┬─────────────────────┬─────────────────────────┬───────────────────────────┐
+│   m │       n │                a │                  Q │ tot rel error │                 Iab │ trunc rel error (exact) │ box cub rel error (exact) │
+├─────┼─────────┼──────────────────┼────────────────────┼───────────────┼─────────────────────┼─────────────────────────┼───────────────────────────┤
+│ 4   │     16  │       4.07866796 │ 0.8709561570491045 │   1.27898e-03 │ -1.0000000000000000 │             1.43594e+00 │               2.14816e+00 │
+│ 5   │     32  │       4.56008941 │ 0.8781504714907443 │   6.33839e-04 │ -1.0000000000000000 │             1.43594e+00 │               2.13876e+00 │
+│ 6   │     64  │       4.99532767 │ 0.8819018906612305 │   9.64898e-05 │ -1.0000000000000000 │             1.43594e+00 │               2.13391e+00 │
+│ 7   │     128 │       5.39557055 │ 0.8827416796733143 │   1.44522e-05 │ -1.0000000000000000 │             1.43594e+00 │               2.13283e+00 │
+│ 8   │     256 │       5.76810755 │ 0.8829739767286060 │   2.32618e-06 │ -1.0000000000000000 │             1.43594e+00 │               2.13254e+00 │
+│ 9   │     512 │       6.11800194 │ 0.8830305608542719 │   1.62249e-07 │ -1.0000000000000000 │             1.43594e+00 │               2.13246e+00 │
+│ 10  │    1024 │       6.44894029 │ 0.8830439618159036 │   4.04714e-08 │ -1.0000000000000000 │             1.43594e+00 │               2.13245e+00 │
+│ 11  │    2048 │       6.76370564 │ 0.8830469027331588 │   3.49260e-09 │ -1.0000000000000000 │             1.43594e+00 │               2.13244e+00 │
+│ 12  │    4096 │       7.06446014 │ 0.8830475600691048 │   4.91235e-10 │ -1.0000000000000000 │             1.43594e+00 │               2.13244e+00 │
+│ 13  │    8192 │       7.35292323 │ 0.8830477033470163 │   5.67714e-11 │ -1.0000000000000000 │             1.43594e+00 │               2.13244e+00 │
+│ 14  │   16384 │       7.63048905 │ 0.8830477337944038 │   3.18311e-12 │ -1.0000000000000000 │             1.43594e+00 │               2.13244e+00 │
+│ 15  │   32768 │       7.89830654 │ 0.8830477401466041 │   7.05407e-13 │ -1.0000000000000000 │             1.43594e+00 │               2.13244e+00 │
+│ 16  │   65536 │       8.15733592 │ 0.8830477414531849 │   8.91451e-14 │ -1.0000000000000000 │             1.43594e+00 │               2.13244e+00 │
+│ 17  │  131072 │       8.40838941 │ 0.8830477417177101 │   8.50245e-15 │ -1.0000000000000000 │             1.43594e+00 │               2.13244e+00 │
+│ 18  │  262144 │       8.65216132 │ 0.8830477417705056 │   6.60715e-16 │ -1.0000000000000000 │             1.43594e+00 │               2.13244e+00 │
+│ 19  │  524288 │       8.88925073 │ 0.8830477417809153 │   9.06493e-17 │ -1.0000000000000000 │             1.43594e+00 │               2.13244e+00 │
+│ 20  │ 1048576 │       9.12017882 │ 0.8830477417829443 │   0.00000e+00 │ -1.0000000000000000 │             1.43594e+00 │               2.13244e+00 │
+└─────┴─────────┴──────────────────┴────────────────────┴───────────────┴─────────────────────┴─────────────────────────┴───────────────────────────┘
+ERROR: LoadError: MethodError: no method matching writeOut(::Dict{Any,Any}, ::Int64)
+Closest candidates are:
+  writeOut(::Dict, ::String) at /home/philippe/.julia/dev/QMCIntegrationInR/IntRQMC_D_MultiLevel_v8.jl:583
+Stacktrace:
+ [1] main() at /home/philippe/.julia/dev/QMCIntegrationInR/IntRQMC_D_MultiLevel_v8.jl:178
+ [2] top-level scope at /home/philippe/.julia/dev/QMCIntegrationInR/IntRQMC_D_MultiLevel_v8.jl:593
+ [3] include(::String) at ./client.jl:457
+ [4] top-level scope at REPL[22]:1
+in expression starting at /home/philippe/.julia/dev/QMCIntegrationInR/IntRQMC_D_MultiLevel_v8.jl:593
+

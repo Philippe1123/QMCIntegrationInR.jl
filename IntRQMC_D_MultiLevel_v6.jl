@@ -38,19 +38,20 @@ analytical_sol(a::Real, s::Int64, sigma::Real) =
         M = 64 # number of shifts
         N_lattice = 2 .^ collect(4:1:20)
         N_net = 2 .^ collect(4:1:20)
-    
-    
+
+
         #  generator = DigitalNet64InterlacedTwo(s)
         #generator = DigitalNet64InterlacedThree(s)
-    
+
         #generator = LatticeRule(s)
-    
+
         #generator = DigitalNet64(s)
-    
-        
+
+
         # dim = 1
+
         s = 1
-        
+
 
         Data = RunSimulation(
             s,
@@ -60,11 +61,11 @@ analytical_sol(a::Real, s::Int64, sigma::Real) =
             0.6,
             LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),true
         )
-        writeOut(Data, "1_Inv")
-        
+        writeOut(Data, "1_v6_res")
+
         Data = RunSimulation(s, M, N_net, 1, 0.6, DigitalNet64(s),true)
-        writeOut(Data, "2_Inv")
-    
+        writeOut(Data, "2_v6_res")
+
         Data = RunSimulation(
             s,
             M,
@@ -73,10 +74,10 @@ analytical_sol(a::Real, s::Int64, sigma::Real) =
             1.6,
             LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),true
         )
-        writeOut(Data, "3_Inv")
-    
+        writeOut(Data, "3_v6_res")
+
         Data = RunSimulation(s, M, N_net, 2, 1.6, DigitalNet64InterlacedTwo(s),true)
-        writeOut(Data, "4_Inv")
+        writeOut(Data, "4_v6_res")
         Data = RunSimulation(
             s,
             M,
@@ -85,12 +86,12 @@ analytical_sol(a::Real, s::Int64, sigma::Real) =
             2.6,
             LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),true
         )
-        writeOut(Data, "5_Inv")
+        writeOut(Data, "5_v6_res")
 
         Data = RunSimulation(s, M, N_net, 3, 2.6, DigitalNet64InterlacedThree(s),true)
-        writeOut(Data, "6_Inv")
-        
-        
+        writeOut(Data, "6_v6_res")
+
+"""
         # dim = 2
         s = 2
         Data = RunSimulation(
@@ -102,10 +103,10 @@ analytical_sol(a::Real, s::Int64, sigma::Real) =
             LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),true
         )
         writeOut(Data, "7_Inv")
-    
+
         Data = RunSimulation(s, M, N_net, 1, 0.6, DigitalNet64(s),true)
         writeOut(Data, "8_Inv")
-        
+
 
         Data = RunSimulation(
             s,
@@ -119,7 +120,7 @@ analytical_sol(a::Real, s::Int64, sigma::Real) =
 
         Data = RunSimulation(s, M, N_net, 2, 1.6, DigitalNet64InterlacedTwo(s),true)
         writeOut(Data, "10_Inv")
-    
+
         Data = RunSimulation(
             s,
             M,
@@ -129,13 +130,13 @@ analytical_sol(a::Real, s::Int64, sigma::Real) =
             LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),true
         )
         writeOut(Data, "11_Inv")
-    
+
         Data = RunSimulation(s, M, N_net, 3, 2.6, DigitalNet64InterlacedThree(s),true)
         writeOut(Data, "12_Inv")
-        
-    
+
         # dim = 3
         s = 3
+
         Data = RunSimulation(
             s,
             M,
@@ -156,9 +157,10 @@ analytical_sol(a::Real, s::Int64, sigma::Real) =
             LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),true
         )
         writeOut(Data, "15_Inv")
-    
+
         Data = RunSimulation(s, M, N_net, 2, 1.6, DigitalNet64InterlacedTwo(s),true)
         writeOut(Data, "16_Inv")
+
         Data = RunSimulation(
             s,
             M,
@@ -168,11 +170,12 @@ analytical_sol(a::Real, s::Int64, sigma::Real) =
             LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),true
         )
         writeOut(Data, "17_inv")
+
         Data = RunSimulation(s, M, N_net, 3, 2.6, DigitalNet64InterlacedThree(s),true)
         writeOut(Data, "18_Inv")
-        
-    
-    
+"""
+
+
     end # end of function main()
 
 
@@ -282,7 +285,7 @@ function RunSimulation(
 
 
             # pointsBox is s-by-N-by-M --f--> 1-by-N-by-M
-            G_fine = mean(f(pointsBox,params,100), dims = 2) # 1-by-1-by-M
+            G_fine = mean(f(pointsBox,params,10), dims = 2) # 1-by-1-by-M
 #            pointsBox = 0
             GC.gc()
 
@@ -300,7 +303,7 @@ function RunSimulation(
                 plot(pointsBox[1,ip, 1],"*k")
                 sleep(0.01)
             end
-            """          
+            """
 
             corrfactor_fine =
                 correctionFactor == true ? (Φ(BoxBoundary,1.) - Φ(-BoxBoundary,1.))^s : 1
@@ -451,7 +454,7 @@ function plotter(Data::Dict)
         ", params = ",
         Data[13],
         ", alpha = ",
-        Data[14]  
+        Data[14]
     )
     title(str)
     ylabel("Abs. error")

@@ -12,11 +12,15 @@ using DataFrames
 
 
 function main()
+    path=string(@__DIR__,"/")
+ #   path=string(@__DIR__,"/res/PDE/03122021/")
+ #   path=string(@__DIR__,"/res/PDE/06122021_11elem/")
+ #   path=string(@__DIR__,"/res/PDE/07122021_95elem/")
 
-    path=string(@__DIR__,"/res/Mapping/09092021/a=100/")
-    for id = 1:18
+  figure()
+    for id in [9]
 
-        Data = load(string(path,id, "_Inv.jld2"))["data"]
+        Data = load(string(path,id, "_v8_res.jld2"))["data"]
         plotter(Data,path)
 
     end
@@ -25,7 +29,7 @@ function main()
 end
 
 
-function plotter(Data::Dict,path::String)
+function plotter(Data::Dict,path::String;type_name::String="Nil")
 
     timings = Data[2]
     trueErrors = Data[3]
@@ -39,20 +43,26 @@ function plotter(Data::Dict,path::String)
     nbOfSamples = Data[11]
 
 
-    figure()
-    loglog(nbOfSamples, trueErrors, "-ks")
+  
+    
     #loglog(nbOfSamples, abs.(estimatedCubatureErrors), "-r*")
-    loglog(nbOfSamples, abs.(trueCubatureErrors), "-rs")
+    #loglog(nbOfSamples, abs.(trueCubatureErrors), ":rs",markerfacecolor="None",markeredgecolor="red")
     #loglog(nbOfSamples, abs.(estimatedTruncationErrors), "-g*")
-    loglog(nbOfSamples, abs.(trueTruncationErrors), "-gs")
+    #loglog(nbOfSamples, abs.(trueTruncationErrors), "-.gs")
+    
     loglog(nbOfSamples, nbOfSamples .^ -1, "--b")
     loglog(nbOfSamples, nbOfSamples .^ -2, "--r")
     loglog(nbOfSamples, nbOfSamples .^ -3, "--y")
+
+    ylim([10^(-17),1])
+    
+    loglog(nbOfSamples, trueErrors, "-v")
+
     grid(which="both",ls="-")
 
 
     str = string(
-        QMCType,
+        QMCType," ",type_name,
         "\n",
         "s = ",
         s,
@@ -62,10 +72,12 @@ function plotter(Data::Dict,path::String)
         Data[13],
         ", alpha = ",
         Data[14],
+        "_a=",
+        Data[16],
     )
 
     strname = string(
-        QMCType,
+        QMCType,"_",type_name,
         "_",
         "s=",
         s,
@@ -75,6 +87,8 @@ function plotter(Data::Dict,path::String)
         Data[13],
         "_alpha=",
         Data[14],
+        "_a=",
+        Data[16],
     )
     title(str)
     ylabel("Rel. error")
@@ -102,7 +116,7 @@ function plotter(Data::Dict,path::String)
 
 
 
-    
+
 
 
 
