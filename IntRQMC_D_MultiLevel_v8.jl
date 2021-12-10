@@ -303,9 +303,7 @@ function RunSimulation(
             ElemType="OneD_Order1"
             NumberOfElements=size(Elements,1)
 
-            NumberOfElementsPlus1=NumberOfElements*2
- #           pts = collect(1/NumberOfElementsPlus1:1/NumberOfElementsPlus1:(1-1/NumberOfElementsPlus1))
-            pts = collect(0:1/(NumberOfElementsPlus1):1)
+            pts = collect(0:1/(NumberOfElements*2):1)
             
 
             # Define random field as sum of cosine
@@ -325,12 +323,14 @@ function RunSimulation(
                         n=n+1
                     end
                     Field = 0.1.+exp.(Field)
-                    Field_com=Field[2:2:end]
-                    for id=1:NumberOfElements MaterialParam[id]=Field[id] end
+                    Field_com = Field[2:2:end]
+                    # fem routine
+                    for id = 1:NumberOfElements MaterialParam[id]=Field[id] end
                     solverparam=(elemtype =ElemType, Qpt=QuadPoints, Nelem=NumberOfElements, Order=parse(Int,ElemType[end]))
-                    u1=solver1D.main(Nodes1,Elements,MaterialParam,solverparam)
-
-                    u1=u1[Int64(floor(length(u1)/2))] * prod(logNormalPdf.((samplesPoints)))
+                    u1 = solver1D.main(Nodes1,Elements,MaterialParam,solverparam)
+                    # fem routine end
+                    #select mid point
+                    u1 = u1[Int64(floor(length(u1)/2))] * prod(logNormalPdf.((samplesPoints)))
 
 
                     
