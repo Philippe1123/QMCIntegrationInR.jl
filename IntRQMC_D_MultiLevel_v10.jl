@@ -15,9 +15,8 @@ using PyPlot
 using FiniteElementDiffusion
 
 
-#Φ⁻¹(x::T where {T<:Real}) = √2 * erfinv(2 * x - 1)
-
-#Φ(x::T where {T<:Real}) = 1 / 2 * (1 + erf(x / √2))
+Φ⁻¹(x::T where {T<:Real}) = √2 * erfinv(2 * x - 1)
+Φ(x::T where {T<:Real}) = 1 / 2 * (1 + erf(x / √2))
 
 logNormalPdf(x) = x <= 0 ? 0 : (1 / (x*sqrt(2 * pi)) .* exp.(-(log(x) ).^ 2 ./ 2))
 
@@ -36,7 +35,7 @@ function main()
 
     #### Input parameters
     M = 8 # number of shifts
-    N_lattice = 2 .^ collect(4:1:16)
+    N_lattice = 2 .^ collect(4:1:8)
     N_net = 2 .^ collect(4:1:12)
 
 
@@ -83,12 +82,12 @@ function main()
         s,
        M,
         N_lattice,
-        3,
+        3.,
        2.6,
         LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
    )
-    writeOut(Data, "5_v8_res")
-   """ 
+    writeOut(Data, "5_v9_res")
+  """
   #  Data = RunSimulation(s, M, N_net, 3, 2.6, DigitalNet64InterlacedThree(s))
   #  writeOut(Data, "6_v8_res")
 
@@ -132,7 +131,7 @@ function main()
         2.6,
         LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
     )
-    writeOut(Data, "11_v8_res")
+    writeOut(Data, "11_v9_res")
 """
     Data = RunSimulation(s, M, N_net, 3, 2.6, DigitalNet64InterlacedThree(s))
     writeOut(Data, "12_v8_res")
@@ -289,8 +288,8 @@ function RunSimulation(
 
                 for id = 1:numberOfPointsBox
                     pointsBox[:, id, shiftId] =
-                        map.(
-                            x -> -BoxBoundary + (BoxBoundary - (-BoxBoundary)) * x,
+                        map.(x -> Φ⁻¹(
+                            Φ(-BoxBoundary) + (Φ(BoxBoundary) - Φ(-BoxBoundary)) * x),
                             shiftedQMCGenerator[id-1],
                         )
                 end
@@ -315,7 +314,7 @@ function RunSimulation(
             G_fine = zeros(1,size(pointsBox,2),size(pointsBox,3))
 
 
-           
+           a=2
 
             for j = 1 : size(pointsBox,2) #loop over samples
                 for k = 1 : size(pointsBox,3) #loop over shifts
@@ -323,7 +322,7 @@ function RunSimulation(
                     n = 1
                     Field=zeros(length(pts),1)
                     for l in samplesPoints
-                        Field=Field .+ l./n.^power .* cos.(pi*n*pts)
+                        Field=Field .+ a*l./n.^power .* cos.(pi*n*pts)
                         n=n+1
                     end
                     Field = 0.1.+exp.(Field)
@@ -335,7 +334,7 @@ function RunSimulation(
                     # fem routine end
                     #select mid point
                 #    u1 = u1[Int64(floor(length(u1)/2))] * prod(logNormalPdf.((samplesPoints)))
-                    u1 = u1[Int64(floor(length(u1)/2))] * prod(NormalPdf.((samplesPoints)))
+                    u1 = u1[Int64(floor(length(u1)/2))] * prod(a *exp.(-samplesPoints.^2 ./ 2 .* (a^2-1)))
 
 
                     
@@ -368,7 +367,8 @@ function RunSimulation(
 
             G_fine=mean(G_fine,dims=2)
 
-            QMC_R = abs.(G_fine) * (BoxBoundary *2)^s
+
+            QMC_R = abs.(G_fine) * (Φ(BoxBoundary) - Φ(-BoxBoundary))^s
             
             G_fine = 0
             GC.gc()

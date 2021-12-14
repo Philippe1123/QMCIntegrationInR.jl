@@ -10,7 +10,7 @@ using SpecialFunctions: erf, erfinv, gamma, gamma_inc
 
 Φ(x::T where {T<:Real}) = 1 / 2 * (1 + erf(x / √2))
 Φ(x::T where {T<:Real},σ::T where {T<:Real}) = 1 / 2 * (1 + erf(x /(σ * √2)))
-cdfNorm(x::T where {T<:Real}) = 1 / (sqrt(2 * pi)) .* exp.(-(x .^ 2) ./ 2)
+NormalPdf(x) = 1/sqrt(2*pi) *exp(-1/2*x^2)
 
 logNormalPdf(x) = x <= 0 ? 0 : (1 / (x*sqrt(2 * pi)) .* exp.(-(log(x) ).^ 2 ./ 2))
 
@@ -38,11 +38,11 @@ function main()
   #  figure("a")
   #  figure("b")
    # figure("field")
-    a=-2
+    a=-6
     b=6
         utot=0
-        maxpt=2^12
-        s=4
+        maxpt=2^20
+        s=1
      #   figure("u1")
       #  figure("u1_mult")
         u_vec=zeros(maxpt,1)
@@ -74,7 +74,7 @@ function main()
             sleep(2.)
             """
             
-            u1=u1_full[Int64(floor(length(u1_full)/2))] * prod(logNormalPdf.(samplesPoints))
+            u1=u1_full[Int64(floor(length(u1_full)/2))] * prod(NormalPdf.(samplesPoints))
             """
             figure("u1")
             plot(u1_full,"-*")
@@ -130,7 +130,6 @@ function main()
                 ),
                 samplesPoints,
             )
-            out = exp.(out)
             n = 1
             Field=zeros(length(pts),1)
             for l in out

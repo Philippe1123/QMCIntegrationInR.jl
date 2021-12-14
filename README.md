@@ -40,3 +40,5 @@ IntRQMC_D_MultiLevel_v7.jl   ->   Integration of the function in R with Niederei
 IntRQMC_D_MultiLevel_v81.jl   ->   Integration of the output of a 1D PDE (log diffusion) in R with Sobol' sequences and HKKN lattice sequences, fixed number of samples, increasing domain
 
 IntRQMC_D_MultiLevel_v82.jl   ->   Integration of the output of a 1D PDE (log diffusion) in R with Sobol' sequences and HKKN lattice sequences, fixed domain, increasing number of samples
+
+**IntRQMC_D_MultiLevel_v9.jl   ->   Integration of the output of a 1D PDE (log diffusion) in the unit cube [0,1] with Sobol' sequences and HKKN lattice sequences with inverse mapping**
