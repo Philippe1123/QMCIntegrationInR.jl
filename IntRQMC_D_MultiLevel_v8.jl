@@ -36,7 +36,7 @@ function main()
 
     #### Input parameters
     M = 8 # number of shifts
-    N_lattice = 2 .^ collect(4:1:16)
+    N_lattice = 2 .^ collect(4:1:17)
     N_net = 2 .^ collect(4:1:12)
 
 
@@ -53,11 +53,12 @@ function main()
     s = 1
     
 """
+
     Data = RunSimulation(
         s,
         M,
         N_lattice,
-        1,
+        1.,
         0.6,
         LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
     )
@@ -83,24 +84,24 @@ function main()
         s,
        M,
         N_lattice,
-        3,
+        3.,
        2.6,
         LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
    )
     writeOut(Data, "5_v8_res")
-   """ 
+ 
   #  Data = RunSimulation(s, M, N_net, 3, 2.6, DigitalNet64InterlacedThree(s))
   #  writeOut(Data, "6_v8_res")
 
     
     # dim = 2
     s = 2
-    """
+   
     Data = RunSimulation(
         s,
         M,
         N_lattice,
-        1,
+        1.,
         0.6,
         LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
     )
@@ -123,7 +124,7 @@ function main()
     
     Data = RunSimulation(s, M, N_net, 2, 1.6, DigitalNet64InterlacedTwo(s))
     writeOut(Data, "10_v8_res")
-"""
+
     Data = RunSimulation(
         s,
         M,
@@ -133,7 +134,7 @@ function main()
         LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
     )
     writeOut(Data, "11_v8_res")
-"""
+
     Data = RunSimulation(s, M, N_net, 3, 2.6, DigitalNet64InterlacedThree(s))
     writeOut(Data, "12_v8_res")
     """
@@ -141,31 +142,35 @@ function main()
     # dim = 3
 
     s = 3
-    """
+    
     Data = RunSimulation(
         s,
         M,
         N_lattice,
-        1,
+        1.,
         0.6,
         LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
     )
+    
+    
     #  plotter(Data)
     writeOut(Data, "13_v8_res")
-    
+    """
     Data = RunSimulation(s, M, N_net, 1, 0.6, DigitalNet64(s))
     #   plotter(Data)
     writeOut(Data, "14_v8_res")
+    
     Data = RunSimulation(
         s,
         M,
         N_lattice,
-        2,
+        2.,
         1.6,
         LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
     )
     #   plotter(Data)
     writeOut(Data, "15_v8_res")
+    
 
     Data = RunSimulation(s, M, N_net, 2, 1.6, DigitalNet64InterlacedTwo(s))
     #   plotter(Data)
