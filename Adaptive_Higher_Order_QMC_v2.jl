@@ -25,7 +25,7 @@ function main()
 
 
     s = 3
-    M = 4
+    M = 16
 
 
     tol = 10.0 .^ (-1:-1:-4)
@@ -71,6 +71,8 @@ function RunSimulation(
     estimatedTime = []
     estimatedTruncationErrors = []
     estimatedCubatureErrors = []
+    DictOfEstimatedTruncationErrors = Dict()
+    DictOfEstimatedCubatureErrors = Dict()
 
 
 
@@ -80,7 +82,7 @@ function RunSimulation(
 
     BoxBoundary = 0 # our large box is [-largeBox, largeBox]^d
     SampleExponentBox = 4
-
+    counter = 1
 
     for tolerance in tol
         #SampleExponentBox = 2
@@ -159,6 +161,9 @@ function RunSimulation(
 
         end # end of @elapsed
 
+        DictOfEstimatedTruncationErrors[counter] = estimatedTruncationErrorsInternals
+        DictOfEstimatedCubatureErrors[counter] = estimatedCubatureErrorsInternals
+
         push!(estimatedCubatureErrors, estimatedCubatureErrorsInternals[end])
         push!(estimatedTruncationErrors, estimatedTruncationErrorsInternals[end])
         push!(estimatedTime, t)
@@ -172,7 +177,7 @@ function RunSimulation(
         )
 
 
-
+        counter = counter + 1
     end
 
     figure()
@@ -182,6 +187,12 @@ function RunSimulation(
     loglog(estimatedTime, estimatedTime .^ -1, "--b")
     loglog(estimatedTime, estimatedTime .^ -2, "--r")
     loglog(estimatedTime, estimatedTime .^ -3, "--y")
+
+    for i = 1 : length(tol)
+        loglog(estimatedTime, DictOfEstimatedTruncationErrors[i] , "ok")
+        loglog(estimatedTime, DictOfEstimatedCubatureErrors[1], "or")
+    end
+
     grid(which = "both", ls = "-")
 
 

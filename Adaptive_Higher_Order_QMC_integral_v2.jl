@@ -19,12 +19,21 @@ using FiniteElementDiffusion
 NormalPdf(x) = 1 / sqrt(2 * pi) * exp(-1 / 2 * x^2)
 
 
+analytical_sol(a::Real, s::Int64, sigma::Real) =
+    (
+        (
+            gamma((1 + sigma) / 2) -
+            gamma((1 + sigma) / 2) * gamma_inc((1 + sigma) / 2, a^2 / 2, 0)[2]
+        ) * 2^(sigma / 2) / sqrt(pi) + erf(a / sqrt(2))
+    )^s
+
+
 
 function main()
 
 
     s = 3
-    M = 8
+    M = 32
 
 
     tol = 10.0 .^ (-1:-1:-9)
@@ -70,8 +79,12 @@ function RunSimulation(
     estimatedTime = []
     estimatedTruncationErrors = []
     estimatedCubatureErrors = []
+    DictOfEstimatedTruncationErrors = Dict()
+    DictOfEstimatedCubatureErrors = Dict()
 
 
+    exactCubatureErrors = []
+    exactTruncationErrors = []
 
 
 
@@ -79,7 +92,7 @@ function RunSimulation(
 
     BoxBoundary = 0 # our large box is [-largeBox, largeBox]^d
     SampleExponentBox = 2
-
+    counter = 1
 
     for tolerance in tol
         #SampleExponentBox = 2
@@ -95,20 +108,21 @@ function RunSimulation(
         t = @elapsed begin
             ########################################## Adjust truncation error error
             while truncationError > tolerance / 2
+
+
                 BoxBoundary = 0
                 numberOfPointsBox = 2^(SampleExponentBox)
                 push!(samplesInternals, numberOfPointsBox)
-
+                
+                #compute the box boundary
                 BoxBoundary = sqrt(2 * alpha * log(numberOfPointsBox))
                 push!(boundsOfBoxesInternals, BoxBoundary)
 
-
-                pointsBox = mapPoints(M,QMCGenerator,numberOfPointsBox,s,BoxBoundary)
+                # compute all the points
+                pointsBox =
+                    mapPoints(M, QMCGenerator, numberOfPointsBox, s, BoxBoundary)
 
                 # Solve the problem
-
-
-
                 G_fine = SolveRoutine(pointsBox)
                 QMC_std, QMC_Q = ComputeQMCStdAndExp(G_fine, BoxBoundary, s, M)
                 push!(estimatedCubatureErrorsInternals, QMC_std)
@@ -116,17 +130,30 @@ function RunSimulation(
 
 
                 ####################### Adjust Cubature error
-                estimatedCubatureError = QMC_std
-                SampleExponentCubature = SampleExponentBox
+                estimatedCubatureError = QMC_std     
+                SampleExponentCubature = SampleExponentBox    # start with exponent used for box
                 while estimatedCubatureError > tolerance / 2
+
                     numberOfPointsBox = 2^(SampleExponentCubature)
-                    pointsBox = mapPoints(M,QMCGenerator,numberOfPointsBox,s,BoxBoundary)
+                    pointsBox =
+                        mapPoints(M, QMCGenerator, numberOfPointsBox, s, BoxBoundary)
                     G_fine = SolveRoutine(pointsBox)
                     # Compute std of qmc and expected value
                     QMC_std, QMC_Q = ComputeQMCStdAndExp(G_fine, BoxBoundary, s, M)
                     estimatedCubatureError = QMC_std
                     push!(estimatedCubatureErrorsInternals, QMC_std)
-                    println("qmc error is ",QMC_std, " on box ", -BoxBoundary," ",BoxBoundary)
+                    println(
+                        "qmc error is ",
+                        QMC_std,
+                        " on box ",
+                        -BoxBoundary,
+                        " ",
+                        BoxBoundary,
+                        " exp val is ",
+                        QMC_Q,
+                        " eact sol is ",
+                        analytical_sol(BoxBoundary, s, 2.6),
+                    )
                     SampleExponentCubature = SampleExponentCubature + 1
 
                 end
@@ -139,23 +166,46 @@ function RunSimulation(
                     truncationError =
                         abs.(QMCResultsInternals[end-1] - QMCResultsInternals[end]) /
                         QMCResultsInternals[end]
-                    println("truncation error is ",truncationError)
+                    println("truncation error is ", truncationError)
 
                     push!(estimatedTruncationErrorsInternals, truncationError)
                 else
                     push!(estimatedTruncationErrorsInternals, -1)
                 end
 
-                SampleExponentBox = SampleExponentBox + 1
+                if truncationError > tolerance / 2
+                    estimatedCubatureErrorsInternals = [] # clear array when computing new truncation error
+                end
 
+
+                SampleExponentBox = SampleExponentBox + 1 # increase exponent for next box
+                
             end
-                SampleExponentBox = SampleExponentBox - 1
-
+            SampleExponentBox = SampleExponentBox - 1   #if while loop of truncation error is satisfied reset the sample exponent back with one, avoid unecessary increasing the starting box for new tolerances 
+            
 
             println("##############################################")
 
 
         end # end of @elapsed
+
+
+        #### computation of exact sol and updating arrays for printing
+
+        DictOfEstimatedTruncationErrors[counter] = estimatedTruncationErrorsInternals
+        DictOfEstimatedCubatureErrors[counter] = estimatedCubatureErrorsInternals
+
+
+
+        exactSolOnBox = analytical_sol(BoxBoundary, s, 2.6)
+
+        exactSol = analytical_sol(1000, s, 2.6)
+
+        push!(
+            exactCubatureErrors,
+            abs(exactSolOnBox - QMCResultsInternals[end]) ./ QMCResultsInternals[end],
+        )
+        push!(exactTruncationErrors, abs(exactSol - exactSolOnBox) ./ exactSol)
 
         push!(estimatedCubatureErrors, estimatedCubatureErrorsInternals[end])
         push!(estimatedTruncationErrors, estimatedTruncationErrorsInternals[end])
@@ -170,17 +220,43 @@ function RunSimulation(
         )
 
 
-
+        counter = counter + 1
     end
 
     figure()
     loglog(estimatedTime, estimatedTruncationErrors, "*-k")
     loglog(estimatedTime, estimatedCubatureErrors, "*-r")
 
+
+
+
     loglog(estimatedTime, estimatedTime .^ -1, "--b")
     loglog(estimatedTime, estimatedTime .^ -2, "--r")
     loglog(estimatedTime, estimatedTime .^ -3, "--y")
+    loglog(estimatedTime, exactTruncationErrors, "*--k")
+    loglog(estimatedTime, exactCubatureErrors, "*--r")
     grid(which = "both", ls = "-")
+    legend((
+        "estimatedTruncationErrors",
+        "estimatedCubatureErrors",
+        "time^-1",
+        "time^-2",
+        "time^-3",
+        "exact truncation error",
+        "exact cubature error"
+    ))
+    xlabel("time [sec]")
+    ylabel("error [/]")
+    for i = 1:length(tol)
+
+
+        loglog(
+            vec(estimatedTime[i] * ones(1, length(DictOfEstimatedCubatureErrors[i]))),
+            DictOfEstimatedCubatureErrors[i],
+            "or",
+        )
+    end
+
 
 
 end
@@ -209,7 +285,13 @@ function ComputeQMCStdAndExp(G_fine::Array, BoxBoundary::Float64, s::Int64, M::I
 end
 
 
-function mapPoints(M::Int64,QMCGenerator::Union{DigitalNet64,LatticeRule},numberOfPointsBox::Int64,s::Int64,BoxBoundary::Float64)
+function mapPoints(
+    M::Int64,
+    QMCGenerator::Union{DigitalNet64,LatticeRule},
+    numberOfPointsBox::Int64,
+    s::Int64,
+    BoxBoundary::Float64,
+)
 
     Random.seed!(1234)
     pointsBox = zeros(s, numberOfPointsBox, M)
@@ -218,8 +300,7 @@ function mapPoints(M::Int64,QMCGenerator::Union{DigitalNet64,LatticeRule},number
         for id = 1:numberOfPointsBox
             pointsBox[:, id, shiftId] =
                 map.(
-                    x ->
-                        -BoxBoundary + (BoxBoundary - (-BoxBoundary)) * x,
+                    x -> -BoxBoundary + (BoxBoundary - (-BoxBoundary)) * x,
                     shiftedQMCGenerator[id-1],
                 )
         end
