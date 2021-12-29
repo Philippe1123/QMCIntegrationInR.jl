@@ -18,9 +18,9 @@ function main()
  #   path=string(@__DIR__,"/res/PDE/07122021_95elem/")
 
   figure()
-    for id in [13]
+    for id in [17]
 
-        Data = load(string(path,id, "_v8_res.jld2"))["data"]
+        Data = load(string(path,id, "_v83_res.jld2"))["data"]
         plotter(Data,path)
 
     end

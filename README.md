@@ -41,4 +41,15 @@ IntRQMC_D_MultiLevel_v81.jl   ->   Integration of the output of a 1D PDE (log di
 
 IntRQMC_D_MultiLevel_v82.jl   ->   Integration of the output of a 1D PDE (log diffusion) in R with Sobol' sequences and HKKN lattice sequences, fixed domain, increasing number of samples
 
+**IntRQMC_D_MultiLevel_v83.jl   ->   Integration of the output of a 1D PDE (log diffusion) in R with Sobol' sequences and HKKN lattice sequences with gaussian random field based on a matern covariance kernel**
+
+
 **IntRQMC_D_MultiLevel_v9.jl   ->   Integration of the output of a 1D PDE (log diffusion) in the unit cube [0,1] with Sobol' sequences and HKKN lattice sequences with inverse mapping**
+
+
+**IntRQMC_D_MultiLevel_v10.jl   ->   Integration of the output of a 1D PDE (log diffusion) in the unit cube [0,1] with Sobol' sequences and HKKN lattice sequences with IMPROVED inverse mapping**
+
+
+**IntRQMC_D_MultiLevel_v11.jl   ->   Integration of the output of a 2D PDE (log diffusion) in R with Sobol' sequences and HKKN lattice sequences**
+
+
