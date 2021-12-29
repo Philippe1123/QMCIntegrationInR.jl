@@ -25,10 +25,10 @@ function main()
 
 
     s = 3
-    M = 8
+    M = 4
 
 
-    tol = 10.0 .^ (-1:-1:-8)
+    tol = 10.0 .^ (-1:-1:-4)
 
     Data = RunSimulation(
         s,
@@ -64,7 +64,7 @@ function RunSimulation(
     tol::Vector,
     QMCGenerator::Union{DigitalNet64,LatticeRule},
 )
-    alpha = 1 #hardcode alpha
+    alpha = 2 #hardcode alpha
 
 
 
@@ -79,7 +79,7 @@ function RunSimulation(
 
 
     BoxBoundary = 0 # our large box is [-largeBox, largeBox]^d
-    SampleExponentBox = 2
+    SampleExponentBox = 4
 
 
     for tolerance in tol

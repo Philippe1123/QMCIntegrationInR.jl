@@ -27,7 +27,7 @@ function main()
     M = 8
 
 
-    tol = 10.0 .^ (-1:-1:-8)
+    tol = 10.0 .^ (-1:-1:-9)
 
     Data = RunSimulation(
         s,
@@ -63,7 +63,7 @@ function RunSimulation(
     tol::Vector,
     QMCGenerator::Union{DigitalNet64,LatticeRule},
 )
-    alpha = 1 #hardcode alpha
+    alpha = 3 #hardcode alpha
 
 
 
@@ -109,7 +109,7 @@ function RunSimulation(
 
 
 
-                G_fine = SolveRoutine(pointsBox,s)
+                G_fine = SolveRoutine(pointsBox)
                 QMC_std, QMC_Q = ComputeQMCStdAndExp(G_fine, BoxBoundary, s, M)
                 push!(estimatedCubatureErrorsInternals, QMC_std)
 
@@ -121,7 +121,7 @@ function RunSimulation(
                 while estimatedCubatureError > tolerance / 2
                     numberOfPointsBox = 2^(SampleExponentCubature)
                     pointsBox = mapPoints(M,QMCGenerator,numberOfPointsBox,s,BoxBoundary)
-                    G_fine = SolveRoutine(pointsBox,s)
+                    G_fine = SolveRoutine(pointsBox)
                     # Compute std of qmc and expected value
                     QMC_std, QMC_Q = ComputeQMCStdAndExp(G_fine, BoxBoundary, s, M)
                     estimatedCubatureError = QMC_std
