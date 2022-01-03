@@ -3,7 +3,7 @@ using LatticeRules
 
 #using PyPlot
 
-using Statistics: mean, std
+using Statistics
 using SpecialFunctions: erf, erfinv, gamma, gamma_inc
 using StringLiterals
 using PrettyTables
@@ -12,30 +12,23 @@ using DelimitedFiles
 using JLD2
 using FileIO
 using PyPlot
+using FiniteElementDiffusion
+using GaussianRandomFields
 
 
 
 NormalPdf(x) = 1 / sqrt(2 * pi) * exp(-1 / 2 * x^2)
 
 
-analytical_sol(a::Real, s::Int64, sigma::Real) =
-    (
-        (
-            gamma((1 + sigma) / 2) -
-            gamma((1 + sigma) / 2) * gamma_inc((1 + sigma) / 2, a^2 / 2, 0)[2]
-        ) * 2^(sigma / 2) / sqrt(pi) + erf(a / sqrt(2))
-    )^s
-
-
 
 function main()
 
 
-    s = 5
-    M = 32
+    s = 3
+    M = 8
 
 
-    tol = 10.0 .^ (-1:-1:-9)
+    tol = 10.0 .^ (-1:-1:-10)
 
     Data = RunSimulation(
         s,
@@ -83,8 +76,6 @@ function RunSimulation(
     DictOfEstimatedCubatureErrorsTimings = Dict()
 
 
-    exactCubatureErrors = []
-    exactTruncationErrors = []
 
 
 
@@ -107,21 +98,19 @@ function RunSimulation(
         samplesInternals = [] # reintilized for each tolerance, only used internally
         boundsOfBoxesInternals = [] # reintilized for each tolerance, only used internally
 
-        if length(estimatedTruncationErrors) > 0 &&
-           estimatedTruncationErrors[end] < tolerance / 2 &&
-           estimatedCubatureErrors[end] < tolerance / 2
+        if length(estimatedTruncationErrors) > 0 && estimatedTruncationErrors[end] < tolerance / 2 &&estimatedCubatureErrors[end] < tolerance / 2
+           
 
-
-            estimatedTruncationErrorsInternals = DictOfEstimatedTruncationErrors[counter-1]
-            estimatedCubatureErrorsInternals = DictOfEstimatedCubatureErrors[counter-1]
-            estimatedCubatureErrorsInternalsTimings =
-                DictOfEstimatedCubatureErrorsTimings[counter-1]
-
-            t = estimatedTime[end]
-            println("Truncation and Cubature were already satisfied in previous run")
-
+                estimatedTruncationErrorsInternals = DictOfEstimatedTruncationErrors[counter-1] 
+                estimatedCubatureErrorsInternals = DictOfEstimatedCubatureErrors[counter-1] 
+                estimatedCubatureErrorsInternalsTimings = DictOfEstimatedCubatureErrorsTimings[counter-1]
+                
+                t = estimatedTime[end]
+                println("Truncation and Cubature were already satisfied in previous run")
+            
 
         else
+
 
 
 
@@ -148,7 +137,7 @@ function RunSimulation(
                         )
 
                         # Solve the problem
-                        G_fine = SolveRoutine(pointsBox)
+                        G_fine = SolveRoutine(pointsBox, s)
                         QMC_std, QMC_Q = ComputeQMCStdAndExp(G_fine, BoxBoundary, s, M)
                     end
                     push!(estimatedCubatureErrorsInternals, QMC_std)
@@ -161,6 +150,16 @@ function RunSimulation(
                     else
                         push!(estimatedCubatureErrorsInternalsTimings, timingQMC)
                     end
+                    println(
+                        "qmc error is ",
+                        QMC_std,
+                        " on box ",
+                        -BoxBoundary,
+                        " ",
+                        BoxBoundary,
+                        " exp val is ",
+                        QMC_Q,
+                    )
 
 
 
@@ -179,7 +178,7 @@ function RunSimulation(
                                 s,
                                 BoxBoundary,
                             )
-                            G_fine = SolveRoutine(pointsBox)
+                            G_fine = SolveRoutine(pointsBox, s)
                             # Compute std of qmc and expected value
                             QMC_std, QMC_Q =
                                 ComputeQMCStdAndExp(G_fine, BoxBoundary, s, M)
@@ -201,8 +200,6 @@ function RunSimulation(
                             BoxBoundary,
                             " exp val is ",
                             QMC_Q,
-                            " eact sol is ",
-                            analytical_sol(BoxBoundary, s, 2.6),
                         )
                         SampleExponentCubature = SampleExponentCubature + 1
 
@@ -243,8 +240,6 @@ function RunSimulation(
             end # end of @elapsed
         end # end of if else
 
-
-
         #### computation of exact sol and updating arrays for printing
 
         DictOfEstimatedTruncationErrors[counter] = estimatedTruncationErrorsInternals
@@ -254,15 +249,7 @@ function RunSimulation(
 
 
 
-        exactSolOnBox = analytical_sol(BoxBoundary, s, 2.6)
 
-        exactSol = analytical_sol(1000, s, 2.6)
-
-        push!(
-            exactCubatureErrors,
-            abs(exactSolOnBox - QMCResultsInternals[end]) ./ QMCResultsInternals[end],
-        )
-        push!(exactTruncationErrors, abs(exactSol - exactSolOnBox) ./ exactSol)
 
         push!(estimatedCubatureErrors, estimatedCubatureErrorsInternals[end])
         push!(estimatedTruncationErrors, estimatedTruncationErrorsInternals[end])
@@ -291,8 +278,7 @@ function RunSimulation(
     loglog(estimatedTime, estimatedTime .^ -1, "--b")
     loglog(estimatedTime, estimatedTime .^ -2, "--r")
     loglog(estimatedTime, estimatedTime .^ -3, "--y")
-    loglog(estimatedTime, exactTruncationErrors, "*--k")
-    loglog(estimatedTime, exactCubatureErrors, "*--r")
+
     grid(which = "both", ls = "-")
     legend((
         "estimatedTruncationErrors",
@@ -300,8 +286,6 @@ function RunSimulation(
         "time^-1",
         "time^-2",
         "time^-3",
-        "exact truncation error",
-        "exact cubature error",
     ))
     xlabel("time [sec]")
     ylabel("error [/]")
@@ -324,11 +308,59 @@ function RunSimulation(
 end
 
 
-function SolveRoutine(pointsBox::Array)
-    G_fine = prod(
-        (1 .+ abs.(pointsBox) .^ 2.6) .* 1 / (sqrt(2 * pi)) .* exp.(-(pointsBox .^ 2) ./ 2),
-        dims = 1,
-    )
+function SolveRoutine(pointsBox::Array, s::Int64)
+
+
+
+    MaterialParam = Dict()
+    QuadPoints = 1
+
+    #Order 1
+    Elements = Int64.(readdlm(joinpath(locationOfMesh, "1D/Elements_1_5.txt")))
+    Elements = Elements[:, 5:end]
+    Nodes = readdlm(joinpath(locationOfMesh, "1D/Nodes_1_5.txt"))
+    Center = compute_centers(Nodes[:, 2], Elements)
+    matField = GaussianRandomFields.Matern(0.3, 2.0, σ = 1.0, p = 2)
+    cov = CovarianceFunction(1, matField)
+    grf =
+        GaussianRandomField(cov, KarhunenLoeve(s), Center, Elements, quad = GaussLegendre())
+
+
+
+    Nodes1 = Nodes[:, 2]#only retain x component
+    ElemType = "OneD_Order1"
+    NumberOfElements = size(Elements, 1)
+
+    pts = collect(0:1/(NumberOfElements*2):1)
+    G_fine = zeros(1, size(pointsBox, 2), size(pointsBox, 3))
+
+
+    # Define random field Gaussian random field
+    power = 2
+    for j = 1:size(pointsBox, 2) #loop over samples
+        for k = 1:size(pointsBox, 3) #loop over shifts
+            samplesPoints = pointsBox[:, j, k]
+
+            Field = GaussianRandomFields.sample(grf, xi = samplesPoints)
+
+            Field = 0.1 .+ exp.(Field)
+            # fem routine
+            for id = 1:NumberOfElements
+                MaterialParam[id] = Field[id]
+            end
+            solverparam = (
+                elemtype = ElemType,
+                Qpt = QuadPoints,
+                Nelem = NumberOfElements,
+                Order = parse(Int, ElemType[end]),
+            )
+            u1 = solver1D.main(Nodes1, Elements, MaterialParam, solverparam)
+            # fem routine end
+            #select mid point
+            u1 = u1[Int64(floor(length(u1) / 2))] * prod(NormalPdf.((samplesPoints)))
+            G_fine[1, j, k] = u1
+        end
+    end
     return G_fine
 
 end
@@ -344,6 +376,19 @@ function ComputeQMCStdAndExp(G_fine::Array, BoxBoundary::Float64, s::Int64, M::I
     QMC_std = std(QMC_R) / sqrt(M)
     return QMC_std, QMC_Q
 
+end
+
+function compute_centers(p, t)
+    d = size(p, 2)
+    vec_t = vec(t)
+    size_t = size(t)
+
+    pts = Array{Float64}(undef, size(t, 1), d)
+    @inbounds for i = 1:d
+        x = reshape(p[vec_t, i], size_t)
+        mean!(view(pts, :, i), x)
+    end
+    pts
 end
 
 
@@ -369,7 +414,6 @@ function mapPoints(
     end
     return pointsBox
 end
-
 
 
 

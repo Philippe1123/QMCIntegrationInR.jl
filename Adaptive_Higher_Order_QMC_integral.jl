@@ -186,7 +186,7 @@ function RunSimulation(
                 SampleExponent = SampleExponent + 1
 
             end
- 
+
         end # end of @elapsed
 
         push!(estimatedCubatureErrors, estimatedCubatureErrorsInternals[end])

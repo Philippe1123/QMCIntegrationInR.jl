@@ -72,7 +72,7 @@ function main()
     
   #  Data = RunSimulation(s, M, N_net, 2, 1.6, DigitalNet64InterlacedTwo(s))
   #  writeOut(Data, "4_v8_res")
-    """
+    
     Data = RunSimulation(
         s,
        M,
@@ -82,13 +82,15 @@ function main()
         LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
    )
     writeOut(Data, "5_v11_res")
-    """
+    
   #  Data = RunSimulation(s, M, N_net, 3, 2.6, DigitalNet64InterlacedThree(s))
   #  writeOut(Data, "6_v8_res")
 
     
     # dim = 2
-    s = 2
+   """ 
+   s = 2
+   """
    
     Data = RunSimulation(
         s,
@@ -112,12 +114,12 @@ function main()
         1.6,
         LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
     )
-    writeOut(Data, "9_v8_res")
+    writeOut(Data, "9_v11_res")
     
     
     Data = RunSimulation(s, M, N_net, 2, 1.6, DigitalNet64InterlacedTwo(s))
-    writeOut(Data, "10_v8_res")
-
+    writeOut(Data, "10_v11_res")
+    """
     Data = RunSimulation(
         s,
         M,
@@ -126,10 +128,10 @@ function main()
         2.6,
         LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
     )
-    writeOut(Data, "11_v8_res")
-
+    writeOut(Data, "11_v11_res")
+    """
     Data = RunSimulation(s, M, N_net, 3, 2.6, DigitalNet64InterlacedThree(s))
-    writeOut(Data, "12_v8_res")
+    writeOut(Data, "12_v11_res")
     """
 
     # dim = 3
@@ -395,9 +397,7 @@ function RunSimulation(
 
             exactSolOnBox = -1
             solutionsOnBox[idx] = exactSolOnBox
-            exactSol = analytical_sol(1000, s, params)
-            exactCubatureError = abs(exactSolOnBox - QMC_Q[1]) ./ QMC_Q[1]
-            exactTruncationError = abs(exactSol - exactSolOnBox) ./ exactSol
+
             totError = QMC_std
 
 
