@@ -81,6 +81,7 @@ function RunSimulation(
     estimatedCubatureErrors = []
     DictOfEstimatedTruncationErrors = Dict()
     DictOfEstimatedCubatureErrors = Dict()
+    DictOfEstimatedCubatureErrorsTimings = Dict()
 
 
     exactCubatureErrors = []
@@ -102,6 +103,7 @@ function RunSimulation(
         truncationError = 10 * tolerance # initalisation
         QMCResultsInternals = [] # reintilized for each tolerance, only used internally
         estimatedCubatureErrorsInternals = [] # reintilized for each tolerance, only used internally
+        estimatedCubatureErrorsInternalsTimings = []
         estimatedTruncationErrorsInternals = [] # reintilized for each tolerance, only used internally
         samplesInternals = [] # reintilized for each tolerance, only used internally
         boundsOfBoxesInternals = [] # reintilized for each tolerance, only used internally
@@ -109,23 +111,31 @@ function RunSimulation(
             ########################################## Adjust truncation error error
             while truncationError > tolerance / 2
 
-
-                BoxBoundary = 0
-                numberOfPointsBox = 2^(SampleExponentBox)
-                push!(samplesInternals, numberOfPointsBox)
+                timingQMC = @elapsed begin
+                    BoxBoundary = 0
+                    numberOfPointsBox = 2^(SampleExponentBox)
+                    push!(samplesInternals, numberOfPointsBox)
                 
-                #compute the box boundary
-                BoxBoundary = sqrt(2 * alpha * log(numberOfPointsBox))
-                push!(boundsOfBoxesInternals, BoxBoundary)
+                    #compute the box boundary
+                    BoxBoundary = sqrt(2 * alpha * log(numberOfPointsBox))
+                    push!(boundsOfBoxesInternals, BoxBoundary)
 
-                # compute all the points
-                pointsBox =
-                    mapPoints(M, QMCGenerator, numberOfPointsBox, s, BoxBoundary)
+                    # compute all the points
+                    pointsBox =
+                        mapPoints(M, QMCGenerator, numberOfPointsBox, s, BoxBoundary)
 
-                # Solve the problem
-                G_fine = SolveRoutine(pointsBox)
-                QMC_std, QMC_Q = ComputeQMCStdAndExp(G_fine, BoxBoundary, s, M)
+                    # Solve the problem
+                    G_fine = SolveRoutine(pointsBox)
+                    QMC_std, QMC_Q = ComputeQMCStdAndExp(G_fine, BoxBoundary, s, M)
+                end
                 push!(estimatedCubatureErrorsInternals, QMC_std)
+
+                if length(estimatedCubatureErrorsInternalsTimings) > 0
+                    push!(estimatedCubatureErrorsInternalsTimings,timingQMC+estimatedCubatureErrorsInternalsTimings[end])
+                else
+                    push!(estimatedCubatureErrorsInternalsTimings,timingQMC)
+                end
+
 
 
 
@@ -133,15 +143,20 @@ function RunSimulation(
                 estimatedCubatureError = QMC_std     
                 SampleExponentCubature = SampleExponentBox    # start with exponent used for box
                 while estimatedCubatureError > tolerance / 2
+                    timingQMC = @elapsed begin
 
-                    numberOfPointsBox = 2^(SampleExponentCubature)
-                    pointsBox =
-                        mapPoints(M, QMCGenerator, numberOfPointsBox, s, BoxBoundary)
-                    G_fine = SolveRoutine(pointsBox)
-                    # Compute std of qmc and expected value
-                    QMC_std, QMC_Q = ComputeQMCStdAndExp(G_fine, BoxBoundary, s, M)
-                    estimatedCubatureError = QMC_std
-                    push!(estimatedCubatureErrorsInternals, QMC_std)
+                        numberOfPointsBox = 2^(SampleExponentCubature)
+                        pointsBox =
+                            mapPoints(M, QMCGenerator, numberOfPointsBox, s, BoxBoundary)
+                        G_fine = SolveRoutine(pointsBox)
+                        # Compute std of qmc and expected value
+                        QMC_std, QMC_Q = ComputeQMCStdAndExp(G_fine, BoxBoundary, s, M)
+                        estimatedCubatureError = QMC_std
+                        push!(estimatedCubatureErrorsInternals, QMC_std)
+
+                    end
+                    #println(length(estimatedCubatureErrorsInternalsTimings))
+                    push!(estimatedCubatureErrorsInternalsTimings,timingQMC+estimatedCubatureErrorsInternalsTimings[end])
                     println(
                         "qmc error is ",
                         QMC_std,
@@ -175,6 +190,10 @@ function RunSimulation(
 
                 if truncationError > tolerance / 2
                     estimatedCubatureErrorsInternals = [] # clear array when computing new truncation error
+                    lastTiming = estimatedCubatureErrorsInternalsTimings[end]
+                    estimatedCubatureErrorsInternalsTimings = []
+                    push!(estimatedCubatureErrorsInternalsTimings,lastTiming)
+
                 end
 
 
@@ -194,6 +213,7 @@ function RunSimulation(
 
         DictOfEstimatedTruncationErrors[counter] = estimatedTruncationErrorsInternals
         DictOfEstimatedCubatureErrors[counter] = estimatedCubatureErrorsInternals
+        DictOfEstimatedCubatureErrorsTimings[counter] = estimatedCubatureErrorsInternalsTimings
 
 
 
@@ -230,6 +250,7 @@ function RunSimulation(
 
 
 
+
     loglog(estimatedTime, estimatedTime .^ -1, "--b")
     loglog(estimatedTime, estimatedTime .^ -2, "--r")
     loglog(estimatedTime, estimatedTime .^ -3, "--y")
@@ -251,13 +272,15 @@ function RunSimulation(
 
 
         loglog(
-            vec(estimatedTime[i] * ones(1, length(DictOfEstimatedCubatureErrors[i]))),
-            DictOfEstimatedCubatureErrors[i],
-            "or",
+            DictOfEstimatedCubatureErrorsTimings[i][2:end],
+            DictOfEstimatedCubatureErrors[i][1:end],
+            "-.or",alpha=0.3, mec = "r"
         )
     end
-
-
+#    println(DictOfEstimatedCubatureErrorsTimings[1])
+#    println(DictOfEstimatedCubatureErrorsTimings[1][end])
+#    println(DictOfEstimatedCubatureErrorsTimings[2][end])
+#    println(estimatedTime)
 
 end
 
