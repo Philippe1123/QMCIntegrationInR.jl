@@ -3,7 +3,7 @@ using LatticeRules
 
 #using PyPlot
 
-using Statistics: mean, std
+using Statistics
 using SpecialFunctions: erf, erfinv, gamma, gamma_inc
 using StringLiterals
 using PrettyTables
@@ -13,6 +13,7 @@ using JLD2
 using FileIO
 using PyPlot
 using FiniteElementDiffusion
+using GaussianRandomFields
 
 
 Φ⁻¹(x::T where {T<:Real}) = √2 * erfinv(2 * x - 1)
@@ -35,7 +36,7 @@ function main()
 
     #### Input parameters
     M = 8 # number of shifts
-    N_lattice = 2 .^ collect(4:1:8)
+    N_lattice = 2 .^ collect(4:1:14)
     N_net = 2 .^ collect(4:1:12)
 
 
@@ -60,10 +61,10 @@ function main()
         0.6,
         LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
     )
-    writeOut(Data, "1_v10_res")
+    writeOut(Data, "1_v12_res")
  
   #  Data = RunSimulation(s, M, N_net, 1, 0.6, DigitalNet64(s))
-  #  writeOut(Data, "2_v10_res")
+  #  writeOut(Data, "2_v12_res")
     
     Data = RunSimulation(
         s,
@@ -73,10 +74,11 @@ function main()
         1.6,
         LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
     )
-    writeOut(Data, "3_v10_res")
+    writeOut(Data, "3_v12_res")
     
   #  Data = RunSimulation(s, M, N_net, 2, 1.6, DigitalNet64InterlacedTwo(s))
-  #  writeOut(Data, "4_v10_res")
+  #  writeOut(Data, "4_v12_res")
+"""
 
     Data = RunSimulation(
         s,
@@ -86,10 +88,10 @@ function main()
        2.6,
         LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
    )
-    writeOut(Data, "5_v10_res")
-  """
+    writeOut(Data, "5_v12_res")
+ 
   #  Data = RunSimulation(s, M, N_net, 3, 2.6, DigitalNet64InterlacedThree(s))
-  #  writeOut(Data, "6_v10_res")
+  #  writeOut(Data, "6_v12_res")
 
     
     # dim = 2
@@ -103,10 +105,10 @@ function main()
         0.6,
         LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
     )
-    writeOut(Data, "7_v10_res")
+    writeOut(Data, "7_v12_res")
 
     Data = RunSimulation(s, M, N_net, 1, 0.6, DigitalNet64(s))
-    writeOut(Data, "8_v10_res")
+    writeOut(Data, "8_v12_res")
     
     
     Data = RunSimulation(
@@ -117,12 +119,12 @@ function main()
         1.6,
         LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
     )
-    writeOut(Data, "9_v10_res")
+    writeOut(Data, "9_v12_res")
     
     
     Data = RunSimulation(s, M, N_net, 2, 1.6, DigitalNet64InterlacedTwo(s))
-    writeOut(Data, "10_v10_res")
-"""
+    writeOut(Data, "10_v12_res")
+    """
     Data = RunSimulation(
         s,
         M,
@@ -131,10 +133,10 @@ function main()
         2.6,
         LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
     )
-    writeOut(Data, "11_v10_res")
-"""
+    writeOut(Data, "11_v12_res")
+    """
     Data = RunSimulation(s, M, N_net, 3, 2.6, DigitalNet64InterlacedThree(s))
-    writeOut(Data, "12_v10_res")
+    writeOut(Data, "12_v12_res")
     """
 
     # dim = 3
@@ -150,11 +152,11 @@ function main()
         LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
     )
     #  plotter(Data)
-    writeOut(Data, "13_v10_res")
+    writeOut(Data, "13_v12_res")
     
     Data = RunSimulation(s, M, N_net, 1, 0.6, DigitalNet64(s))
     #   plotter(Data)
-    writeOut(Data, "14_v10_res")
+    writeOut(Data, "14_v12_res")
     Data = RunSimulation(
         s,
         M,
@@ -164,13 +166,13 @@ function main()
         LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
     )
     #   plotter(Data)
-    writeOut(Data, "15_v10_res")
+    writeOut(Data, "15_v12_res")
 
     Data = RunSimulation(s, M, N_net, 2, 1.6, DigitalNet64InterlacedTwo(s))
     #   plotter(Data)
-    writeOut(Data, "16_v10_res")
+    writeOut(Data, "16_v12_res")
     
-    
+    """
     Data = RunSimulation(
         s,
         M,
@@ -181,12 +183,12 @@ function main()
     )
 
     #   plotter(Data)
-    writeOut(Data, "17_v10_res")
-    
+    writeOut(Data, "17_v12_res")
+    """
   
     Data = RunSimulation(s, M, N_net, 6, 2.6, DigitalNet64InterlacedThree(s))
     #   plotter(Data)
-    writeOut(Data, "18_v10_res")
+    writeOut(Data, "18_v12_res")
     """
 
 
@@ -277,7 +279,7 @@ function RunSimulation(
 
             # We first generate *all* the points for all the shifts...
 #            BoxBoundary =sqrt(2 *alpha * log(numberOfPointsBox)^(1.5))
-            BoxBoundary =sqrt(2 *alpha * log(numberOfPointsBox))
+            BoxBoundary =7.63048905
 
             boundsOfBoxes[idx] = BoxBoundary
 
@@ -297,41 +299,40 @@ function RunSimulation(
 
 
             end
-
             #Order 1
-            Elements=Int64.(readdlm(joinpath(locationOfMesh,"1D/Elements_1_5.txt")))
+
+            Elements=Int64.(readdlm(joinpath(locationOfMesh,"2D/Structured/Quad/Elements_1_16.txt")))
             Elements=Elements[:,5:end]
-            Nodes=readdlm(joinpath(locationOfMesh,"1D/Nodes_1_5.txt"))
-            Nodes1=Nodes[:,2]#only retain x component
-            ElemType="OneD_Order1"
+            Nodes=readdlm(joinpath(locationOfMesh,"2D/Structured/Quad/Nodes_1_16.txt"))
+            Nodes1=Nodes[:,2:3]#only retain xy component
+            ElemType="TwoD_Quad_Order1"
             NumberOfElements=size(Elements,1)
 
-            pts = collect(0:1/(NumberOfElements*2):1)
-            
 
-            # Define random field as sum of cosine
-            power = 2
+    
             G_fine = zeros(1,size(pointsBox,2),size(pointsBox,3))
 
+            Center=compute_centers(Nodes1,Elements)
 
-           a=2
 
-            for j = 1 : size(pointsBox,2) #loop over samples
-                for k = 1 : size(pointsBox,3) #loop over shifts
-                    samplesPoints = pointsBox[:,j,k]
-                    n = 1
-                    Field=zeros(length(pts),1)
-                    for l in samplesPoints
-                        Field=Field .+ a*l./n.^power .* cos.(pi*n*pts)
-                        n=n+1
-                    end
-                    Field = 0.1.+exp.(Field)
-                    Field_com = Field[2:2:end]
-                    # fem routine
-                    for id = 1:NumberOfElements MaterialParam[id]=Field[id] end
-                    solverparam=(elemtype =ElemType, Qpt=QuadPoints, Nelem=NumberOfElements, Order=parse(Int,ElemType[end]))
-                    u1 = solver1D.main(Nodes1,Elements,MaterialParam,solverparam)
-                    # fem routine end
+            matField = GaussianRandomFields.Matern(0.3,2.0,σ=1.0,p=2)
+            cov = CovarianceFunction(2,matField)
+            grf =  GaussianRandomField(cov,KarhunenLoeve(s),Center,Elements[:,1:3],quad=GaussLegendre())
+
+           a=3
+
+           for j = 1 : size(pointsBox,2) #loop over samples
+            for k = 1 : size(pointsBox,3) #loop over shifts
+                samplesPoints = pointsBox[:,j,k]
+
+                Field=GaussianRandomFields.sample(grf,xi=samplesPoints.*a)
+
+                Field = 0.1.+exp.(Field)
+                # fem routine
+                for id = 1:NumberOfElements MaterialParam[id]=Field[id] end
+                solverparam=(elemtype =ElemType, Qpt=QuadPoints, Nelem=NumberOfElements, Order=parse(Int,ElemType[end]))
+                u1 = solver2D.main(Nodes1,Elements,MaterialParam,solverparam)
+                # fem routine end
                     #select mid point
                 #    u1 = u1[Int64(floor(length(u1)/2))] * prod(logNormalPdf.((samplesPoints)))
                     u1 = u1[Int64(floor(length(u1)/2))] * prod(a *exp.(-samplesPoints.^2 ./ 2 .* (a^2-1)))
@@ -602,6 +603,19 @@ function writeOut(Data::Dict, str::String)
     save(Path, "data", Data)
 
 
+end
+
+function compute_centers(p,t)
+    d = size(p, 2)
+    vec_t = vec(t)
+    size_t = size(t)
+
+    pts = Array{Float64}(undef, size(t, 1), d)
+    @inbounds for i in 1:d
+        x = reshape(p[vec_t, i], size_t)
+        mean!(view(pts, :, i), x)
+    end
+    pts
 end
 
 main()

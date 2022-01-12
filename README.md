@@ -53,3 +53,6 @@ IntRQMC_D_MultiLevel_v82.jl   ->   Integration of the output of a 1D PDE (log di
 **IntRQMC_D_MultiLevel_v11.jl   ->   Integration of the output of a 2D PDE (log diffusion) in R with Sobol' sequences and HKKN lattice sequences**
 
 
+**IntRQMC_D_MultiLevel_v12.jl   ->   Integration of the output of a 2D PDE (log diffusion) in the unit cube [0,1] with Sobol' sequences and HKKN lattice sequences with IMPROVED inverse mapping**
+
+**IntRQMC_D_MultiLevel_v13.jl   ->   Integration of the output of a 2D PDE (log diffusion) in the unit cube [0,1] with Sobol' sequences and HKKN lattice sequences with normal inverse mapping (a = 1)**

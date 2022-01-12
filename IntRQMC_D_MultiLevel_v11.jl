@@ -29,7 +29,7 @@ function main()
 
     #### Input parameters
     M = 8 # number of shifts
-    N_lattice = 2 .^ collect(4:1:8)
+    N_lattice = 2 .^ collect(4:1:14)
     N_net = 2 .^ collect(4:1:12)
 
 
@@ -55,10 +55,10 @@ function main()
         0.6,
         LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
     )
-    writeOut(Data, "1_v8_res")
+    writeOut(Data, "1_v11_res")
  
   #  Data = RunSimulation(s, M, N_net, 1, 0.6, DigitalNet64(s))
-  #  writeOut(Data, "2_v8_res")
+  #  writeOut(Data, "2_v11_res")
     
     Data = RunSimulation(
         s,
@@ -68,10 +68,10 @@ function main()
         1.6,
         LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
     )
-    writeOut(Data, "3_v8_res")
+    writeOut(Data, "3_v11_res")
     
   #  Data = RunSimulation(s, M, N_net, 2, 1.6, DigitalNet64InterlacedTwo(s))
-  #  writeOut(Data, "4_v8_res")
+  #  writeOut(Data, "4_v11_res")
     
     Data = RunSimulation(
         s,
@@ -84,7 +84,7 @@ function main()
     writeOut(Data, "5_v11_res")
     
   #  Data = RunSimulation(s, M, N_net, 3, 2.6, DigitalNet64InterlacedThree(s))
-  #  writeOut(Data, "6_v8_res")
+  #  writeOut(Data, "6_v11_res")
 
     
     # dim = 2
@@ -100,10 +100,10 @@ function main()
         0.6,
         LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
     )
-    writeOut(Data, "7_v8_res")
+    writeOut(Data, "7_v11_res")
 
     Data = RunSimulation(s, M, N_net, 1, 0.6, DigitalNet64(s))
-    writeOut(Data, "8_v8_res")
+    writeOut(Data, "8_v11_res")
     
     
     Data = RunSimulation(
@@ -119,7 +119,7 @@ function main()
     
     Data = RunSimulation(s, M, N_net, 2, 1.6, DigitalNet64InterlacedTwo(s))
     writeOut(Data, "10_v11_res")
-    """
+    
     Data = RunSimulation(
         s,
         M,
@@ -129,7 +129,7 @@ function main()
         LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
     )
     writeOut(Data, "11_v11_res")
-    """
+    
     Data = RunSimulation(s, M, N_net, 3, 2.6, DigitalNet64InterlacedThree(s))
     writeOut(Data, "12_v11_res")
     """
@@ -149,12 +149,12 @@ function main()
     
     
     #  plotter(Data)
-    writeOut(Data, "13_v8_res")
+    writeOut(Data, "13_v11_res")
     """
     """
     Data = RunSimulation(s, M, N_net, 1, 0.6, DigitalNet64(s))
     #   plotter(Data)
-    writeOut(Data, "14_v8_res")
+    writeOut(Data, "14_v11_res")
     
     Data = RunSimulation(
         s,
@@ -165,12 +165,12 @@ function main()
         LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
     )
     #   plotter(Data)
-    writeOut(Data, "15_v8_res")
+    writeOut(Data, "15_v11_res")
     
 
     Data = RunSimulation(s, M, N_net, 2, 1.6, DigitalNet64InterlacedTwo(s))
     #   plotter(Data)
-    writeOut(Data, "16_v8_res")
+    writeOut(Data, "16_v11_res")
     
     """
     Data = RunSimulation(
@@ -188,7 +188,7 @@ function main()
   
     Data = RunSimulation(s, M, N_net, 6, 2.6, DigitalNet64InterlacedThree(s))
     #   plotter(Data)
-    writeOut(Data, "18_v8_res")
+    writeOut(Data, "18_v11_res")
     """
 
 
@@ -301,9 +301,9 @@ function RunSimulation(
             end
 
             #Order 1
-            Elements=Int64.(readdlm(joinpath(locationOfMesh,"2D/Structured/Quad/Elements_1_36.txt")))
+            Elements=Int64.(readdlm(joinpath(locationOfMesh,"2D/Structured/Quad/Elements_1_16.txt")))
             Elements=Elements[:,5:end]
-            Nodes=readdlm(joinpath(locationOfMesh,"2D/Structured/Quad/Nodes_1_36.txt"))
+            Nodes=readdlm(joinpath(locationOfMesh,"2D/Structured/Quad/Nodes_1_16.txt"))
             Nodes1=Nodes[:,2:3]#only retain xy component
             ElemType="TwoD_Quad_Order1"
             NumberOfElements=size(Elements,1)
@@ -338,16 +338,8 @@ function RunSimulation(
                     u1 = u1[Int64(floor(length(u1)/2))] * prod(NormalPdf.((samplesPoints)))
 
 
-                    
-
                     G_fine[1,j,k] = u1
  
-
-
-
-
-
-
                 end
             end
 

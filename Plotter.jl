@@ -10,17 +10,16 @@ using PyPlot
 using DataFrames
 
 
-
 function main()
-    path=string(@__DIR__,"/")
- #   path=string(@__DIR__,"/res/PDE/03122021/")
+ #   path=string(@__DIR__,"/")
+    path=string(@__DIR__,"/res-NoCommit/OutFor36Months/")
  #   path=string(@__DIR__,"/res/PDE/06122021_11elem/")
  #   path=string(@__DIR__,"/res/PDE/07122021_95elem/")
 
   figure()
-    for id in [11]
+    for id in [6]
 
-        Data = load(string(path,id, "_v11_res.jld2"))["data"]
+        Data = load(string(path,id, "_v13_22_res.jld2"))["data"]
         plotter(Data,path)
 
     end

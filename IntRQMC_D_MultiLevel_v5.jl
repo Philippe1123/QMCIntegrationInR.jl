@@ -65,7 +65,7 @@ function main()
 
 
     # dim = 1
-
+    """
     s = 1
 
 
@@ -107,7 +107,7 @@ function main()
 
     Data = RunSimulation(s, M, N_net, 3, 2.6, DigitalNet64InterlacedThree(s))
     writeOut(Data, "6_v5_res")
-
+"""
 """
     # dim = 2
     s = 2
@@ -153,7 +153,9 @@ function main()
 
     # dim = 3
 
+    """
     s = 3
+    """
     Data = RunSimulation(
         s,
         M,

@@ -35,7 +35,7 @@ function main()
     M = 32
 
 
-    tol = 10.0 .^ (-1:-1:-9)
+    tol = 10.0 .^ (-1:-1:-10)
 
     Data = RunSimulation(
         s,
@@ -81,6 +81,7 @@ function RunSimulation(
     DictOfEstimatedTruncationErrors = Dict()
     DictOfEstimatedCubatureErrors = Dict()
     DictOfEstimatedCubatureErrorsTimings = Dict()
+    DictOfSamples = Dict()
 
 
     exactCubatureErrors = []
@@ -106,6 +107,7 @@ function RunSimulation(
         estimatedTruncationErrorsInternals = [] # reintilized for each tolerance, only used internally
         samplesInternals = [] # reintilized for each tolerance, only used internally
         boundsOfBoxesInternals = [] # reintilized for each tolerance, only used internally
+        numberofSamples = []
 
         if length(estimatedTruncationErrors) > 0 &&
            estimatedTruncationErrors[end] < tolerance / 2 &&
@@ -163,15 +165,19 @@ function RunSimulation(
                     end
 
 
-
+                    
+                    push!(numberofSamples,numberOfPointsBox)
 
                     ####################### Adjust Cubature error
                     estimatedCubatureError = QMC_std
-                    SampleExponentCubature = SampleExponentBox    # start with exponent used for box
+                    SampleExponentCubature = SampleExponentBox  + 1  # start with exponent used for box
+
                     while estimatedCubatureError > tolerance / 2
                         timingQMC = @elapsed begin
-
                             numberOfPointsBox = 2^(SampleExponentCubature)
+
+                            push!(numberofSamples,numberOfPointsBox)
+
                             pointsBox = mapPoints(
                                 M,
                                 QMCGenerator,
@@ -224,6 +230,7 @@ function RunSimulation(
 
                     if truncationError > tolerance / 2
                         estimatedCubatureErrorsInternals = [] # clear array when computing new truncation error
+                        numberofSamples = []
                         lastTiming = estimatedCubatureErrorsInternalsTimings[end]
                         estimatedCubatureErrorsInternalsTimings = []
                         push!(estimatedCubatureErrorsInternalsTimings, lastTiming)
@@ -249,8 +256,8 @@ function RunSimulation(
 
         DictOfEstimatedTruncationErrors[counter] = estimatedTruncationErrorsInternals
         DictOfEstimatedCubatureErrors[counter] = estimatedCubatureErrorsInternals
-        DictOfEstimatedCubatureErrorsTimings[counter] =
-            estimatedCubatureErrorsInternalsTimings
+        DictOfSamples[counter] = numberofSamples
+
 
 
 
@@ -266,7 +273,17 @@ function RunSimulation(
 
         push!(estimatedCubatureErrors, estimatedCubatureErrorsInternals[end])
         push!(estimatedTruncationErrors, estimatedTruncationErrorsInternals[end])
-        push!(estimatedTime, t)
+        #push!(estimatedTime, t)
+
+        if (length(estimatedTime)) > 0
+            DictOfEstimatedCubatureErrorsTimings[counter] =
+            estimatedCubatureErrorsInternalsTimings .+ estimatedTime[end]
+            push!(estimatedTime, t + estimatedTime[end])
+        else
+            push!(estimatedTime, t )
+            DictOfEstimatedCubatureErrorsTimings[counter] =
+            estimatedCubatureErrorsInternalsTimings
+        end
 
         println(
             t,
@@ -315,7 +332,17 @@ function RunSimulation(
             alpha = 0.3,
             mec = "r",
         )
+
+        for p=1:length(DictOfSamples[i])
+            text(DictOfEstimatedCubatureErrorsTimings[i][2:end][p],
+            DictOfEstimatedCubatureErrors[i][1:end][p],DictOfSamples[i][p])
+        end
+
     end
+
+    println(DictOfEstimatedCubatureErrors[1][1:end])
+    println(DictOfSamples[1])
+
     #    println(DictOfEstimatedCubatureErrorsTimings[1])
     #    println(DictOfEstimatedCubatureErrorsTimings[1][end])
     #    println(DictOfEstimatedCubatureErrorsTimings[2][end])
@@ -334,6 +361,8 @@ function RunSimulation(
         end
 
     end
+
+    println(DictOfSamples)
 
 
 
