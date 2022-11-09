@@ -35,7 +35,7 @@ function main()
     M = 32
 
 
-    tol = 10.0 .^ (-1:-1:-9)
+    tol = 10.0 .^ (-1:-1:-10)
 
     Data = RunSimulation(
         s,

@@ -36,8 +36,8 @@ function main()
 
     #### Input parameters
     M = 8 # number of shifts
-    N_lattice = 2 .^ collect(4:1:11)
-    N_net = 2 .^ collect(4:1:12)
+    N_lattice = 2 .^ collect(4:1:13)
+    N_net = 2 .^ collect(4:1:13)
 
 
     #  generator = DigitalNet64InterlacedTwo(s)
@@ -51,6 +51,10 @@ function main()
     # dim = 1
     
     s = 1
+
+    for sizeBox in [0.5 1 2 3 4 5]
+    #for sizeBox in [4. 5]
+
     
 """
     Data = RunSimulation(
@@ -90,10 +94,10 @@ function main()
    )
     writeOut(Data, "5_v13_res")
  """
- 
+ """
     Data = RunSimulation(s, M, N_net, 3., 2.6, DigitalNet64InterlacedThree(s))
     writeOut(Data, "6_v13_res")
-
+"""
     
     # dim = 2
     s = 2
@@ -160,21 +164,20 @@ function main()
     Data = RunSimulation(s, M, N_net, 1, 0.6, DigitalNet64(s))
     #   plotter(Data)
     writeOut(Data, "14_v13_res")
+    
     Data = RunSimulation(
         s,
         M,
         N_lattice,
-        2,
-        1.6,
-        LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
-    )
+        2.,
+        2.6,
+        LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),sizeBox)
+    writeOut(Data, string("15_v13_res",sizeBox))
+"""
+    Data = RunSimulation(s, M, N_net, 2., 2.6, DigitalNet64(s),sizeBox)
     #   plotter(Data)
-    writeOut(Data, "15_v13_res")
-
-    Data = RunSimulation(s, M, N_net, 2, 1.6, DigitalNet64InterlacedTwo(s))
-    #   plotter(Data)
-    writeOut(Data, "16_v13_res")
-    
+    writeOut(Data, string("16_v13_res",sizeBox,"_sob"))
+   """ 
     """
     """
     Data = RunSimulation(
@@ -189,15 +192,15 @@ function main()
     #   plotter(Data)
     writeOut(Data, "17_v13_res")
     """
-  """
-    Data = RunSimulation(s, M, N_net, 6, 2.6, DigitalNet64InterlacedThree(s))
+        """
+    Data = RunSimulation(s, M, N_net, 3., 2.6, DigitalNet64InterlacedThree(s),sizeBox)
     #   plotter(Data)
-    writeOut(Data, "18_v13_res")
+    writeOut(Data, string("18_v13_res",sizeBox))
     """
 
 
 end # end of function main()
-
+end
 
 ## Quick and dirty solution for the "isa" problem (needs to be fixed in a more decent matter)
 """
@@ -229,6 +232,7 @@ function RunSimulation(
     alpha::Float64,
     params::Float64,
     QMCGenerator::Union{DigitalNet64,LatticeRule},
+    sizeBox::Float64
 )
 
     QMCType = labelThisGenerator(QMCGenerator)
@@ -283,7 +287,7 @@ function RunSimulation(
 
             # We first generate *all* the points for all the shifts...
 #            BoxBoundary =sqrt(2 *alpha * log(numberOfPointsBox)^(1.5))
-            BoxBoundary = 2.
+            BoxBoundary = sizeBox
 
             boundsOfBoxes[idx] = BoxBoundary
 
@@ -293,10 +297,15 @@ function RunSimulation(
                 shiftedQMCGenerator = randomizedGenerator(QMCGenerator)
 
                 for id = 1:numberOfPointsBox
+
+                ####################################
+                out=shiftedQMCGenerator[id-1]
+                # out=ones(length(out),1)-abs.(2*out.-1)
+                 ##############################################################tent transformation
                     pointsBox[:, id, shiftId] =
                         map.(x -> Φ⁻¹(
                             Φ(-BoxBoundary) + (Φ(BoxBoundary) - Φ(-BoxBoundary)) * x),
-                            shiftedQMCGenerator[id-1],
+                            out,
                         )
                 end
 
@@ -305,9 +314,9 @@ function RunSimulation(
             end
             #Order 1
 
-            Elements=Int64.(readdlm(joinpath(locationOfMesh,"2D/Structured/Quad/Elements_1_4.txt")))
+            Elements=Int64.(readdlm(joinpath(locationOfMesh,"2D/Structured/Quad/Elements_1_16.txt")))
             Elements=Elements[:,5:end]
-            Nodes=readdlm(joinpath(locationOfMesh,"2D/Structured/Quad/Nodes_1_4.txt"))
+            Nodes=readdlm(joinpath(locationOfMesh,"2D/Structured/Quad/Nodes_1_16.txt"))
             Nodes1=Nodes[:,2:3]#only retain xy component
             ElemType="TwoD_Quad_Order1"
             NumberOfElements=size(Elements,1)
@@ -499,6 +508,7 @@ end
 
 
 
+
 function plotter(Data::Dict)
 
     timings = Data[2]
@@ -598,6 +608,7 @@ function plotter(Data::Dict)
 
 
 end
+
 
 function writeOut(Data::Dict, str::String)
 

@@ -1,8 +1,8 @@
 
-###########THIS IS THE LATEST VERSION FOR THE INTEGRAL PROBLEM
+######################### THIS IS THE MOST UP TO DATE VERSION
 #using PyPlot
 
-using Statistics: mean, std
+using Statistics
 using SpecialFunctions: erf, erfinv, gamma, gamma_inc
 using StringLiterals
 using PrettyTables
@@ -12,10 +12,11 @@ using JLD2
 using FileIO
 using PyPlot
 using Distributed
-using LaTeXStrings
 
 using DigitalNets
 using LatticeRules
+using FiniteElementDiffusion
+using GaussianRandomFields
 
 
 
@@ -36,11 +37,11 @@ analytical_sol(a::Real, s::Int64, sigma::Real) =
 function main()
 
 
-    s = 3
-    M = 32
+    s = 10
+    M = 4
 
 
-    tol = 10.0 .^ (-1:-1:-10)
+    tol = 10.0 .^ (-1:-1:-5)
 
     Data = RunSimulation(
         s,
@@ -144,12 +145,12 @@ function RunSimulation(
                     #compute the box boundary
                     BoxBoundary = sqrt(2 * alpha * log(numberOfPointsBox))
                     push!(boundsOfBoxesInternals, BoxBoundary)
+
                     if (length(SampleExponentCubatureArray) == 0)
-                        SampleExponentCubature = SampleExponentBox    # start with exponent used for box
+                        SampleExponentCubature = SampleExponentBox*10    # start with exponent used for box
                     else
                         SampleExponentCubature = SampleExponentCubatureArray[end]
                     end
-
                     numberOfPointsBox = 2^(SampleExponentCubature)
 
                     # compute all the points
@@ -162,7 +163,7 @@ function RunSimulation(
                     )
 
                     # Solve the problem
-                    G_fine = SolveRoutine(pointsBox)
+                    G_fine = SolveRoutine(pointsBox, s)
                     QMC_std, QMC_Q = ComputeQMCStdAndExp(G_fine, BoxBoundary, s, M)
                 end
 
@@ -175,8 +176,6 @@ function RunSimulation(
                     BoxBoundary,
                     " exp val is ",
                     QMC_Q,
-                    " exact sol is ",
-                    analytical_sol(BoxBoundary, s, 2.6),
                     " samples is ",
                     numberOfPointsBox,
                 )
@@ -198,18 +197,11 @@ function RunSimulation(
 
                 ####################### Adjust Cubature error
                 estimatedCubatureError = QMC_std
-                """
-                if (length(SampleExponentCubatureArray)==0)
-                    SampleExponentCubature = SampleExponentBox  + 1  # start with exponent used for box
-                else
-                    SampleExponentCubature = SampleExponentCubatureArray[end]
-                end
-                """
+
                 timingsearch = 0
                 f = (x, y) -> x + y
 
                 timingsearch = @elapsed begin
-                    println(SampleExponentCubature)
                     searchDirct, out = searchDirection(
                         M,
                         s,
@@ -220,6 +212,7 @@ function RunSimulation(
                     )
 
                     isSearched = false
+                    println("start")
                     f = (x, y) -> -10
                     if searchDirct == 1
                         isSearched = true
@@ -231,10 +224,11 @@ function RunSimulation(
                                 estimatedCubatureError > tolerance / 2 ||
                                     isSearched == false
                     elseif searchDirct == 2
+                        maxval = 4
                         estimatedCubatureError = out[1][1]
                         QMC_Q[1] = out[1][2]
-                        SampleExponentCubature = SampleExponentCubature - 1
-                        f = (x, y) -> max(Int64(x - y), 1)
+                        SampleExponentCubature = max(SampleExponentCubature - 1, 4)
+                        f = (x, y) -> max(Int64(x - y), maxval)
                         cond =
                             (estimatedCubatureError, tolerance, isSearched, QMC_std_next) ->
                                 (
@@ -253,16 +247,22 @@ function RunSimulation(
                                     isSearched == false
                     end
                 end
+                println("here")
+
                 estimatedCubatureErrorsInternalsTimings[end] =
                     estimatedCubatureErrorsInternalsTimings[end] + timingsearch
 
                 QMC_std_next = estimatedCubatureError
-                #### must force algorithm to search many times in other diretion, currently goes only once
-                while cond(estimatedCubatureError, tolerance, isSearched, QMC_std_next)
+                println("is searched")
+
+                while QMC_std>tolerance/2
                     isSearched = true
+
+                 if    searchDirct != 2
+                    println("search 1 3")
+
                     timingQMC = @elapsed begin
                         numberOfPointsBox = 2^(SampleExponentCubature)
-                        println(numberOfPointsBox)
 
                         push!(numberofSamples, numberOfPointsBox)
 
@@ -273,7 +273,7 @@ function RunSimulation(
                             s,
                             BoxBoundary,
                         )
-                        G_fine = SolveRoutine(pointsBox)
+                        G_fine = SolveRoutine(pointsBox, s)
                         # Compute std of qmc and expected value
                         QMC_std, QMC_Q = ComputeQMCStdAndExp(G_fine, BoxBoundary, s, M)
                         estimatedCubatureError = QMC_std
@@ -284,11 +284,17 @@ function RunSimulation(
                         estimatedCubatureErrorsInternalsTimings,
                         timingQMC + estimatedCubatureErrorsInternalsTimings[end],
                     )
+                  SampleExponentCubature = SampleExponentCubature + 1
 
-                    if searchDirct == 2
+
+
+                elseif searchDirct == 2
+                    println("search 2")
+
+                        
                         timingQMC = @elapsed begin
-
-                            numberOfPointsBox = 2^(SampleExponentCubature - 1)
+                            
+                            numberOfPointsBox = 2^(SampleExponentCubature )
                             pointsBox = mapPoints(
                                 M,
                                 QMCGenerator,
@@ -296,7 +302,33 @@ function RunSimulation(
                                 s,
                                 BoxBoundary,
                             )
-                            G_fine = SolveRoutine(pointsBox)
+                            G_fine = SolveRoutine(pointsBox, s)
+
+                            vec_QMC_std_next=[]
+                            vec_QMC_Q=[]
+                            for i=SampleExponentCubature :-1:0
+                                QMC_std_next, QMC_Q =
+                                ComputeQMCStdAndExp(G_fine[:,1:2^(i),:], BoxBoundary, s, M)
+                                push!(vec_QMC_std_next, QMC_std_next)
+                                push!(vec_QMC_Q, QMC_Q)
+                            end
+
+
+                            pos=findall(x->(x<tolerance/2),vec_QMC_std_next)
+                            QMC_std_next=vec_QMC_std_next[pos[1]]
+                            QMC_Q=vec_QMC_Q[pos[1]]
+                            push!(estimatedCubatureErrorsInternals, QMC_std_next)
+                            push!(numberofSamples, 2^pos[1])
+                            push!(
+                                estimatedCubatureErrorsInternalsTimings,
+                                timingQMC +
+                                estimatedCubatureErrorsInternalsTimings[end],
+                            )
+                            estimatedCubatureError = QMC_std_next
+                            SampleExponentCubature=pos[1]
+                            QMC_std=QMC_std_next
+                            """
+                            
                             # Compute std of qmc and expected value
                             QMC_std_next, QMC_Q =
                                 ComputeQMCStdAndExp(G_fine, BoxBoundary, s, M)
@@ -318,13 +350,12 @@ function RunSimulation(
 
 
                             end
+                            """
+
                         end
 
 
                     end
-
-
-
 
                     println(
                         "qmc error is ",
@@ -335,18 +366,16 @@ function RunSimulation(
                         BoxBoundary,
                         " exp val is ",
                         QMC_Q,
-                        " exact sol is ",
-                        analytical_sol(BoxBoundary, s, 2.6),
                         " samples is ",
                         numberOfPointsBox,
                     )
                     #SampleExponentCubature = SampleExponentCubature + 1
-                    SampleExponentCubature = f(SampleExponentCubature, 1)
+                   # SampleExponentCubature = f(SampleExponentCubature, 1)
+                    println("samp exp ", SampleExponentCubature)
 
                 end
 
                 push!(SampleExponentCubatureArray, SampleExponentCubature - 1)
-
                 println("------Finished Cubature error--------")
 
                 push!(QMCResultsInternals, QMC_Q[1])
@@ -435,22 +464,20 @@ function RunSimulation(
     figure()
     loglog(estimatedTime, estimatedTruncationErrors, "*-k")
     loglog(estimatedTime, estimatedCubatureErrors, "*-r")
-    loglog(estimatedTime, exactTruncationErrors, "*--k")
-    loglog(estimatedTime, exactCubatureErrors, "*--r")
 
-    loglog([3*10^-2, 3*10^-1], [10^-5, 10^-6], "--b")
-    loglog([3*10^-2, 3*10^-1], [10^-5, 10^-7], "--m")
-    loglog([3*10^-2, 3*10^-1], [10^-5, 10^-8], "--y")
 
+
+
+
+    loglog(estimatedTime, estimatedTime .^ -1, "--b")
+    loglog(estimatedTime, estimatedTime .^ -2, "--m")
+    loglog(estimatedTime, estimatedTime .^ -3, "--y")
     sz = 18
-
     grid(which = "both", ls = "-")
     legend(
         (
             "estimated truncation error",
             "estimated cubature error",
-            "exact truncation error",
-            "exact cubature error",
             "time^-1",
             "time^-2",
             "time^-3",
@@ -463,16 +490,8 @@ function RunSimulation(
     plt.xticks(fontsize = sz)
     plt.yticks(fontsize = sz)
 
-
-    out=estimatedTime[1]
-    DictOfEstimatedCubatureErrorsTimings[1][2]=out
-
     printy=Dict()
     printy=deepcopy(DictOfEstimatedCubatureErrors)
-    printy[3][2]=printy[3][2]-0.00008
-
-
-
     for i = 1:length(tol)
 
 
@@ -498,8 +517,7 @@ function RunSimulation(
 
     end
 
-    println(DictOfEstimatedCubatureErrors[1][1:end])
-    println(DictOfSamples[1])
+
 
     #    println(DictOfEstimatedCubatureErrorsTimings[1])
     #    println(DictOfEstimatedCubatureErrorsTimings[1][end])
@@ -532,18 +550,72 @@ function RunSimulation(
 
     end
 
-    println(DictOfSamples)
 
 
 
 end
 
 
-function SolveRoutine(pointsBox::Array)
-    G_fine = prod(
-        (1 .+ abs.(pointsBox) .^ 2.6) .* 1 / (sqrt(2 * pi)) .* exp.(-(pointsBox .^ 2) ./ 2),
-        dims = 1,
+function SolveRoutine(pointsBox::Array, s::Int64)
+
+
+
+    MaterialParam = Dict()
+    QuadPoints = 3
+
+    #Order 1
+    Elements =
+        Int64.(readdlm(joinpath(locationOfMesh, "2D/Structured/Quad/Elements_1_16.txt")))
+    Elements = Elements[:, 5:end]
+    Nodes = readdlm(joinpath(locationOfMesh, "2D/Structured/Quad/Nodes_1_16.txt"))
+    Nodes1 = Nodes[:, 2:3]#only retain xy component
+
+    Center = compute_centers(Nodes1, Elements)
+    matField = GaussianRandomFields.Matern(0.3, 2.0, σ = 1.0, p = 2)
+    cov = CovarianceFunction(2, matField)
+    grf = GaussianRandomField(
+        cov,
+        KarhunenLoeve(s),
+        Center,
+        Elements[:, 1:3],
+        quad = GaussLegendre(),
     )
+
+
+
+    ElemType = "TwoD_Quad_Order1"
+    NumberOfElements = size(Elements, 1)
+
+    G_fine = zeros(1, size(pointsBox, 2), size(pointsBox, 3))
+
+
+    # Define random field Gaussian random field
+
+    for j = 1:size(pointsBox, 2) #loop over samples
+        for k = 1:size(pointsBox, 3) #loop over shifts
+            samplesPoints = pointsBox[:, j, k]
+
+            Field = GaussianRandomFields.sample(grf, xi = samplesPoints)
+
+            Field = 0.1 .+ exp.(Field)
+            # fem routine
+            for id = 1:NumberOfElements
+                MaterialParam[id] = Field[id]
+            end
+            solverparam = (
+                elemtype = ElemType,
+                Qpt = QuadPoints,
+                Nelem = NumberOfElements,
+                Order = parse(Int, ElemType[end]),
+            )
+            u1 = solver2D.main(Nodes1, Elements, MaterialParam, solverparam)
+            # fem routine end
+            #select mid point
+
+            u1 = u1[Int64(ceil(length(u1) / 2))] * prod(NormalPdf.((samplesPoints)))
+            G_fine[1, j, k] = u1
+        end
+    end
     return G_fine
 
 end
@@ -596,16 +668,27 @@ function searchDirection(
     QMCGenerator::Union{DigitalNet64,LatticeRule},
 )
 
-    out = map(
-        evalStd,
-        [M, M, M],
-        [s, s, s],
-        [BoxBoundary, BoxBoundary, BoxBoundary],
-        [SampleExponentCubature - 1, SampleExponentCubature, SampleExponentCubature + 1],
-        [QMCGenerator, QMCGenerator, QMCGenerator],
-    )
-    println(out)
 
+
+
+    numberOfPointsBox = max(2^(SampleExponentCubature+1),2)
+    pointsBox = mapPoints(M, QMCGenerator, numberOfPointsBox, s, BoxBoundary)
+    G_fine = SolveRoutine(pointsBox,s)
+
+    out_1=ComputeQMCStdAndExp(G_fine[:,1:2^max((SampleExponentCubature - 1),1),:],BoxBoundary,s,M)
+    out0=ComputeQMCStdAndExp(G_fine[:,1:2^max((SampleExponentCubature),1),:],BoxBoundary,s,M)
+    out1=ComputeQMCStdAndExp(G_fine[:,1:2^max((SampleExponentCubature+1),1),:],BoxBoundary,s,M)
+
+
+    a=(out_1[1],out_1[2][1])
+    b=(out0[1],out0[2][1])
+    c=(out1[1],out1[2][1])
+
+    #QMC_std, QMC_Q = ComputeQMCStdAndExp(G_fine, BoxBoundary, s, M)
+
+    out=[a,b,c]
+
+"""
     if out[2][1] < tolerance && out[1][1] > tolerance
         println("Choose ref value")
         return 1, out
@@ -616,6 +699,20 @@ function searchDirection(
         println("Forward search")
         return 3, out
     end
+    """
+
+    if out0[1] < tolerance && out_1[1] > tolerance
+        println("Choose ref value")
+        return 1, out
+    elseif out_1[1] < tolerance && out0[1] < tolerance
+        println("Backward search")
+        return 2, out
+    elseif out0[1] > tolerance
+        println("Forward search")
+        return 3, out
+    end
+
+
 
 end
 
@@ -633,13 +730,25 @@ function evalStd(
     pointsBox = mapPoints(M, QMCGenerator, numberOfPointsBox, s, BoxBoundary)
 
 
-    G_fine = SolveRoutine(pointsBox)
+    G_fine = SolveRoutine(pointsBox, s)
     # Compute std of qmc and expected value
     QMC_std, QMC_Q = ComputeQMCStdAndExp(G_fine, BoxBoundary, s, M)
 
     return QMC_std, QMC_Q[1]
 
 
+end
+function compute_centers(p, t)
+    d = size(p, 2)
+    vec_t = vec(t)
+    size_t = size(t)
+
+    pts = Array{Float64}(undef, size(t, 1), d)
+    @inbounds for i = 1:d
+        x = reshape(p[vec_t, i], size_t)
+        mean!(view(pts, :, i), x)
+    end
+    pts
 end
 
 

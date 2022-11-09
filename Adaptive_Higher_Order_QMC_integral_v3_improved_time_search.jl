@@ -40,13 +40,20 @@ function main()
     M = 32
 
 
-    tol = 10.0 .^ (-1:-1:-10)
-
+    tol = 10.0 .^ (-1:-1:-7)
+    """
     Data = RunSimulation(
         s,
         M,
         tol,
         LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
+    )
+    """
+    Data = RunSimulation(
+        s,
+        M,
+        tol,
+        LatticeRule(s),
     )
 
 end
@@ -198,13 +205,7 @@ function RunSimulation(
 
                 ####################### Adjust Cubature error
                 estimatedCubatureError = QMC_std
-                """
-                if (length(SampleExponentCubatureArray)==0)
-                    SampleExponentCubature = SampleExponentBox  + 1  # start with exponent used for box
-                else
-                    SampleExponentCubature = SampleExponentCubatureArray[end]
-                end
-                """
+  
                 timingsearch = 0
                 f = (x, y) -> x + y
 
@@ -224,7 +225,7 @@ function RunSimulation(
                     if searchDirct == 1
                         isSearched = true
                         estimatedCubatureError = out[2][1]
-                        QMC_Q[1] = out[2][2]
+                        QMC_Q = out[2][2] ################################################
                         f = (x, y) -> Int64(x + 0)
                         cond =
                             (estimatedCubatureError, tolerance, isSearched, QMC_std_next) ->
@@ -232,7 +233,7 @@ function RunSimulation(
                                     isSearched == false
                     elseif searchDirct == 2
                         estimatedCubatureError = out[1][1]
-                        QMC_Q[1] = out[1][2]
+                        QMC_Q = out[1][2]##################################################
                         SampleExponentCubature = SampleExponentCubature - 1
                         f = (x, y) -> max(Int64(x - y), 1)
                         cond =
@@ -245,7 +246,7 @@ function RunSimulation(
                     elseif searchDirct == 3
                         f = (x, y) -> Int64(x + y)
                         estimatedCubatureError = out[3][1]
-                        QMC_Q[1] = out[3][2]
+                        QMC_Q = out[3][2]################################################################
                         SampleExponentCubature = SampleExponentCubature + 1
                         cond =
                             (estimatedCubatureError, tolerance, isSearched, QMC_std_next) ->
@@ -469,7 +470,7 @@ function RunSimulation(
 
     printy=Dict()
     printy=deepcopy(DictOfEstimatedCubatureErrors)
-    printy[3][2]=printy[3][2]-0.00008
+   # printy[3][2]=printy[3][2]-0.00008
 
 
 
@@ -557,7 +558,7 @@ function ComputeQMCStdAndExp(G_fine::Array, BoxBoundary::Float64, s::Int64, M::I
     QMC_R = abs.(G_fine) * (BoxBoundary * 2)^s
     QMC_Q = mean(QMC_R, dims = 3)
     QMC_std = std(QMC_R) / sqrt(M)
-    return QMC_std, QMC_Q
+    return QMC_std, QMC_Q[1]
 
 end
 
@@ -595,7 +596,7 @@ function searchDirection(
     tolerance::Float64,
     QMCGenerator::Union{DigitalNet64,LatticeRule},
 )
-
+    """
     out = map(
         evalStd,
         [M, M, M],
@@ -604,8 +605,30 @@ function searchDirection(
         [SampleExponentCubature - 1, SampleExponentCubature, SampleExponentCubature + 1],
         [QMCGenerator, QMCGenerator, QMCGenerator],
     )
+    """
+    numberOfPointsBox = 2^(SampleExponentCubature+1)
+    pointsBox = mapPoints(M, QMCGenerator, numberOfPointsBox, s, BoxBoundary)
+    G_fine = SolveRoutine(pointsBox)
+
+    out_1=ComputeQMCStdAndExp(G_fine[:,1:2^(SampleExponentCubature - 1),:],BoxBoundary,s,M)
+    out0=ComputeQMCStdAndExp(G_fine[:,1:2^(SampleExponentCubature),:],BoxBoundary,s,M)
+    out1=ComputeQMCStdAndExp(G_fine[:,1:2^(SampleExponentCubature+1),:],BoxBoundary,s,M)
+
+
+    println(typeof(out_1))
+    a=(out_1[1],out_1[2][1])
+    b=(out0[1],out0[2][1])
+    c=(out1[1],out1[2][1])
+
+    #QMC_std, QMC_Q = ComputeQMCStdAndExp(G_fine, BoxBoundary, s, M)
+    println(out_1[2][1])
+    println(out0)
+    println(out1)
+    println("--- here ---")
+    out=[a,b,c]
     println(out)
 
+"""
     if out[2][1] < tolerance && out[1][1] > tolerance
         println("Choose ref value")
         return 1, out
@@ -613,6 +636,18 @@ function searchDirection(
         println("Backward search")
         return 2, out
     elseif out[2][1] > tolerance
+        println("Forward search")
+        return 3, out
+    end
+    """
+
+    if out0[1] < tolerance && out_1[1] > tolerance
+        println("Choose ref value")
+        return 1, out
+    elseif out_1[1] < tolerance && out0[1] < tolerance
+        println("Backward search")
+        return 2, out
+    elseif out0[1] > tolerance
         println("Forward search")
         return 3, out
     end

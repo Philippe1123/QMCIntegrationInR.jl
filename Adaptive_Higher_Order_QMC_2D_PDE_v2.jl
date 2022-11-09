@@ -24,8 +24,8 @@ NormalPdf(x) = 1 / sqrt(2 * pi) * exp(-1 / 2 * x^2)
 function main()
 
 
-    s = 1
-    M = 8
+    s = 2
+    M = 4
 
 
     tol = 10.0 .^ (-1:-1:-8)
@@ -74,6 +74,7 @@ function RunSimulation(
     DictOfEstimatedTruncationErrors = Dict()
     DictOfEstimatedCubatureErrors = Dict()
     DictOfEstimatedCubatureErrorsTimings = Dict()
+    DictOfSamples = Dict()
 
 
 
@@ -97,6 +98,7 @@ function RunSimulation(
         estimatedTruncationErrorsInternals = [] # reintilized for each tolerance, only used internally
         samplesInternals = [] # reintilized for each tolerance, only used internally
         boundsOfBoxesInternals = [] # reintilized for each tolerance, only used internally
+        numberofSamples = []
 
         if length(estimatedTruncationErrors) > 0 && estimatedTruncationErrors[end] < tolerance / 2 &&estimatedCubatureErrors[end] < tolerance / 2
            
@@ -162,6 +164,7 @@ function RunSimulation(
                     )
 
 
+                    push!(numberofSamples,numberOfPointsBox)
 
 
                     ####################### Adjust Cubature error
@@ -171,6 +174,10 @@ function RunSimulation(
                         timingQMC = @elapsed begin
 
                             numberOfPointsBox = 2^(SampleExponentCubature)
+
+                            push!(numberofSamples,numberOfPointsBox)
+
+                            
                             pointsBox = mapPoints(
                                 M,
                                 QMCGenerator,
@@ -221,6 +228,7 @@ function RunSimulation(
 
                     if truncationError > tolerance / 2
                         estimatedCubatureErrorsInternals = [] # clear array when computing new truncation error
+                        numberofSamples = []
                         lastTiming = estimatedCubatureErrorsInternalsTimings[end]
                         estimatedCubatureErrorsInternalsTimings = []
                         push!(estimatedCubatureErrorsInternalsTimings, lastTiming)
@@ -246,6 +254,8 @@ function RunSimulation(
         DictOfEstimatedCubatureErrors[counter] = estimatedCubatureErrorsInternals
         DictOfEstimatedCubatureErrorsTimings[counter] =
             estimatedCubatureErrorsInternalsTimings
+            DictOfSamples[counter] = numberofSamples
+
 
 
 
@@ -276,19 +286,24 @@ function RunSimulation(
 
 
     loglog(estimatedTime, estimatedTime .^ -1, "--b")
-    loglog(estimatedTime, estimatedTime .^ -2, "--r")
+    loglog(estimatedTime, estimatedTime .^ -2, "--m")
     loglog(estimatedTime, estimatedTime .^ -3, "--y")
-
+    sz = 18
     grid(which = "both", ls = "-")
     legend((
-        "estimatedTruncationErrors",
-        "estimatedCubatureErrors",
+        "estimated truncation error",
+        "estimated cubature error",
         "time^-1",
         "time^-2",
         "time^-3",
-    ))
-    xlabel("time [sec]")
-    ylabel("error [/]")
+    ),fontsize = sz)
+    xlabel("time [sec]",fontsize =sz)
+    ylabel("error", fontsize =sz)
+
+    plt.xticks(fontsize=sz)
+    plt.yticks(fontsize=sz)
+
+
     for i = 1:length(tol)
 
 
@@ -299,6 +314,14 @@ function RunSimulation(
             alpha = 0.3,
             mec = "r",
         )
+        for p = 1:length(DictOfSamples[i])
+            text(
+                DictOfEstimatedCubatureErrorsTimings[i][2:end][p],
+                DictOfEstimatedCubatureErrors[i][1:end][p],
+                DictOfSamples[i][p],
+                fontsize=sz
+            )
+        end
     end
     #    println(DictOfEstimatedCubatureErrorsTimings[1])
     #    println(DictOfEstimatedCubatureErrorsTimings[1][end])
@@ -329,9 +352,9 @@ function SolveRoutine(pointsBox::Array, s::Int64)
     QuadPoints = 3
 
     #Order 1
-    Elements=Int64.(readdlm(joinpath(locationOfMesh,"2D/Structured/Quad/Elements_1_4.txt")))
+    Elements=Int64.(readdlm(joinpath(locationOfMesh,"2D/Structured/Quad/Elements_1_16.txt")))
     Elements = Elements[:, 5:end]
-    Nodes=readdlm(joinpath(locationOfMesh,"2D/Structured/Quad/Nodes_1_4.txt"))
+    Nodes=readdlm(joinpath(locationOfMesh,"2D/Structured/Quad/Nodes_1_16.txt"))
     Nodes1=Nodes[:,2:3]#only retain xy component
 
     Center=compute_centers(Nodes1,Elements)

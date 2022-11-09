@@ -1,3 +1,5 @@
+#ALGO 14 in thesis
+
 using DigitalNets
 using LatticeRules
 
@@ -94,8 +96,9 @@ function RunSimulation(
     BoxBoundary = 0 # our large box is [-largeBox, largeBox]^d
     SampleExponentBox = 2
     counter = 1
-
+    SampleExponentCubature = SampleExponentBox
     for tolerance in tol
+        println(SampleExponentBox)
         #SampleExponentBox = 2
         println("##############################################")
         println("Currently running tolerance number ", tolerance)
@@ -248,8 +251,8 @@ function RunSimulation(
 
 
             end # end of @elapsed
-        end # end of if else
 
+        end # end of if else
 
 
         #### computation of exact sol and updating arrays for printing
@@ -300,28 +303,43 @@ function RunSimulation(
     figure()
     loglog(estimatedTime, estimatedTruncationErrors, "*-k")
     loglog(estimatedTime, estimatedCubatureErrors, "*-r")
-
-
-
-
-
-    loglog(estimatedTime, estimatedTime .^ -1, "--b")
-    loglog(estimatedTime, estimatedTime .^ -2, "--r")
-    loglog(estimatedTime, estimatedTime .^ -3, "--y")
     loglog(estimatedTime, exactTruncationErrors, "*--k")
     loglog(estimatedTime, exactCubatureErrors, "*--r")
+
+    loglog([7*10^-3, 7*10^-2], [10^-5, 10^-6], "--b")
+    loglog([7*10^-3, 7*10^-2], [10^-5, 10^-7], "--m")
+    loglog([7*10^-3, 7*10^-2], [10^-5, 10^-8], "--y")
+
+
+    sz = 18
+
     grid(which = "both", ls = "-")
     legend((
-        "estimatedTruncationErrors",
-        "estimatedCubatureErrors",
-        "time^-1",
-        "time^-2",
-        "time^-3",
+        "estimated truncation error",
+        "estimated cubature error",
         "exact truncation error",
         "exact cubature error",
-    ))
-    xlabel("time [sec]")
-    ylabel("error [/]")
+        "time^-1",
+        "time^-2",
+        "time^-3"
+    ),fontsize = sz)
+    xlabel("time [sec]",fontsize =sz)
+    ylabel("error", fontsize =sz)
+
+    plt.xticks(fontsize=sz)
+    plt.yticks(fontsize=sz)
+
+    printy=Dict()
+    printy=deepcopy(DictOfEstimatedCubatureErrors)
+    printy[3][2]=printy[3][2]-0.03
+    printy[4][4]=printy[4][4]+0.00008
+    printy[5][3]=printy[5][3]-0.002
+    printy[6][2]=printy[6][2]-0.005
+    printy[7][4]=printy[7][4]-0.000005
+    printy[8][3]=printy[8][3]-0.000009
+    printy[9][2]=printy[9][2]-0.00002
+
+
     for i = 1:length(tol)
 
 
@@ -332,10 +350,18 @@ function RunSimulation(
             alpha = 0.3,
             mec = "r",
         )
-
-        for p=1:length(DictOfSamples[i])
-            text(DictOfEstimatedCubatureErrorsTimings[i][2:end][p],
-            DictOfEstimatedCubatureErrors[i][1:end][p],DictOfSamples[i][p])
+        println("------")
+        println(string("tol ",tol[i]))
+        for p = 1:1:length(DictOfSamples[i])
+            println(string("time ",DictOfEstimatedCubatureErrorsTimings[i][2:end][p]))
+            num=log(DictOfSamples[i][p])/log(2)
+            println(num)
+            text(
+                DictOfEstimatedCubatureErrorsTimings[i][2:end][p],
+                printy[i][1:end][p],
+                latexstring("\$2^{$num}\$"),
+                fontsize = sz,rotation=0
+            )
         end
 
     end

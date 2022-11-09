@@ -36,8 +36,8 @@ function main()
 
     #### Input parameters
     M = 8 # number of shifts
-    N_lattice = 2 .^ collect(4:1:14)
-    N_net = 2 .^ collect(4:1:12)
+    N_lattice = 2 .^ collect(4:1:13)
+    N_net = 2 .^ collect(4:1:13)
 
 
     #  generator = DigitalNet64InterlacedTwo(s)
@@ -49,8 +49,10 @@ function main()
 
 
     # dim = 1
-    
-    s = 1
+    a_param_vec = 1.0:1.0:4.0
+    for a_param in a_param_vec
+
+   # s = 1
     
 """
     Data = RunSimulation(
@@ -79,7 +81,7 @@ function main()
   #  Data = RunSimulation(s, M, N_net, 2, 1.6, DigitalNet64InterlacedTwo(s))
   #  writeOut(Data, "4_v12_res")
 """
-
+"""
     Data = RunSimulation(
         s,
        M,
@@ -89,13 +91,13 @@ function main()
         LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
    )
     writeOut(Data, "5_v12_res")
- 
+ """
   #  Data = RunSimulation(s, M, N_net, 3, 2.6, DigitalNet64InterlacedThree(s))
   #  writeOut(Data, "6_v12_res")
 
     
     # dim = 2
-    s = 2
+    #s = 2
     """
     Data = RunSimulation(
         s,
@@ -125,6 +127,7 @@ function main()
     Data = RunSimulation(s, M, N_net, 2, 1.6, DigitalNet64InterlacedTwo(s))
     writeOut(Data, "10_v12_res")
     """
+    """
     Data = RunSimulation(
         s,
         M,
@@ -134,6 +137,7 @@ function main()
         LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
     )
     writeOut(Data, "11_v12_res")
+    """
     """
     Data = RunSimulation(s, M, N_net, 3, 2.6, DigitalNet64InterlacedThree(s))
     writeOut(Data, "12_v12_res")
@@ -172,26 +176,30 @@ function main()
     #   plotter(Data)
     writeOut(Data, "16_v12_res")
     
-    """
+  """  
     Data = RunSimulation(
         s,
         M,
         N_lattice,
         3.,
         2.6,
+        a_param,
         LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),
     )
 
     #   plotter(Data)
-    writeOut(Data, "17_v12_res")
+    writeOut(Data, string("17_v12_res_tau=",a_param,"_lat_tent"))
     """
-  
-    Data = RunSimulation(s, M, N_net, 6, 2.6, DigitalNet64InterlacedThree(s))
+    Data = RunSimulation(s, M, N_net, 3., a_param,2.6, DigitalNet64InterlacedTwo(s))
     #   plotter(Data)
-    writeOut(Data, "18_v12_res")
-    """
+    writeOut(Data, string("18_v12_res_tau=",a_param,"_sob2"))
 
+    Data = RunSimulation(s, M, N_net, 3., a_param,2.6, DigitalNet64(s))
+    #   plotter(Data)
+    writeOut(Data, string("18_v12_res_tau=",a_param,"_sob"))
+        """
 
+end
 end # end of function main()
 
 
@@ -224,6 +232,7 @@ function RunSimulation(
     N::Vector,
     alpha::Float64,
     params::Float64,
+    a::Float64,
     QMCGenerator::Union{DigitalNet64,LatticeRule},
 )
 
@@ -279,7 +288,7 @@ function RunSimulation(
 
             # We first generate *all* the points for all the shifts...
 #            BoxBoundary =sqrt(2 *alpha * log(numberOfPointsBox)^(1.5))
-            BoxBoundary =7.63048905
+            BoxBoundary =10^10
 
             boundsOfBoxes[idx] = BoxBoundary
 
@@ -289,11 +298,14 @@ function RunSimulation(
                 shiftedQMCGenerator = randomizedGenerator(QMCGenerator)
 
                 for id = 1:numberOfPointsBox
-                    pointsBox[:, id, shiftId] =
-                        map.(x -> Φ⁻¹(
-                            Φ(-BoxBoundary) + (Φ(BoxBoundary) - Φ(-BoxBoundary)) * x),
-                            shiftedQMCGenerator[id-1],
-                        )
+                    out=shiftedQMCGenerator[id-1]
+                     out=ones(length(out),1)-abs.(2*out.-1)
+                     ##############################################################tent transformation
+                        pointsBox[:, id, shiftId] =
+                            map.(x -> Φ⁻¹(
+                                Φ(-BoxBoundary) + (Φ(BoxBoundary) - Φ(-BoxBoundary)) * x),
+                                out,
+                            )
                 end
 
 
@@ -319,7 +331,6 @@ function RunSimulation(
             cov = CovarianceFunction(2,matField)
             grf =  GaussianRandomField(cov,KarhunenLoeve(s),Center,Elements[:,1:3],quad=GaussLegendre())
 
-           a=3
 
            for j = 1 : size(pointsBox,2) #loop over samples
             for k = 1 : size(pointsBox,3) #loop over shifts

@@ -19,16 +19,16 @@ function main()
   #figure()
   #  for id in [15]
   figure()
-        Data = load(string(path,15, "_v13_res0.5.jld2"))["data"]
+        Data = load(string(path,17, "_v12_res_tau=1.0_lat.jld2"))["data"]
        plotter(Data,path,"s",(255, 89, 72)./255)
 
-        Data = load(string(path,15, "_v13_res0.5_tent.jld2"))["data"]
+        Data = load(string(path,17, "_v12_res_tau=1.0_lat_tent.jld2"))["data"]
        plotter(Data,path,"D",(255, 122, 40)./255)
 
-        Data = load(string(path,16, "_v13_res0.5_sob.jld2"))["data"]
+        Data = load(string(path,18, "_v12_res_tau=1.0_sob.jld2"))["data"]
        plotter(Data,path,"^",(67, 133, 255)./255)
 
-        Data = load(string(path,16, "_v13_res0.5_sob2.jld2"))["data"]
+        Data = load(string(path,18, "_v12_res_tau=1.0_sob2.jld2"))["data"]
        plotter(Data,path,"o",(0, 179, 89)./255)
        nbOfSamples = Data[11]
        s = Data[9]
@@ -45,86 +45,67 @@ function main()
         "Sobol' Factor 2 Interlacing",
         "N^-1",
         "N^-2",
-        "QMC std",
     ),fontsize=12)
     str = string(
     "s = ",
     s,
     ", shift = ",
     M,
-    ", domain = ",
-    "[",-0.5,",",0.5,"]"
+    ", τ = ",
+    "1.0"
 )
     sz = 15
     title(str,fontsize=sz)
-    PyPlot.savefig("05.pdf",transparent = "true",bbox_inches="tight")
 
   #  end
 
-  ###########################################################################################
-
-  figure()
-  Data = load(string(path,15, "_v13_res1.0.jld2"))["data"]
- plotter(Data,path,"s",(255, 89, 72)./255)
-
-  Data = load(string(path,15, "_v13_res1.0_tent.jld2"))["data"]
- plotter(Data,path,"D",(255, 122, 40)./255)
-
-  Data = load(string(path,16, "_v13_res1.0_sob.jld2"))["data"]
- plotter(Data,path,"^",(67, 133, 255)./255)
-
-  Data = load(string(path,16, "_v13_res1.0_sob2.jld2"))["data"]
- plotter(Data,path,"o",(0, 179, 89)./255)
- nbOfSamples = Data[11]
- s = Data[9]
- M = Data[10]
+  
+nbOfSamples = Data[11]
+s = Data[9]
+M = Data[10]
 
 loglog(nbOfSamples, nbOfSamples .^ -1, "--b")
 loglog(nbOfSamples, nbOfSamples .^ -2, "--r")
 
 
 legend((
-  "rank-1 Lattice",
-  "Tent transformed rank-1 lattice",
-  "Sobol'",
-  "Sobol' Factor 2 Interlacing",
-  "N^-1",
-  "N^-2",
-  "QMC std",
+"rank-1 Lattice",
+"Tent transformed rank-1 lattice",
+"Sobol'",
+"Sobol' Factor 2 Interlacing",
+"N^-1",
+"N^-2",
 ),fontsize=12)
 str = string(
 "s = ",
 s,
 ", shift = ",
 M,
-", domain = ",
-"[",-1.0,",",1.0,"]"
+", τ = ",
+"1.0"
 )
 sz = 15
 title(str,fontsize=sz)
 ax = gca()
 
-ax[:yaxis][:set_ticks_position]("right")
-ax[:yaxis][:set_label_position]("right")
+ax[:yaxis][:set_ticks_position]("left")
+ax[:yaxis][:set_label_position]("left")
 plt.yticks(fontsize=sz)
 
-PyPlot.savefig("10.pdf",transparent = "true",bbox_inches="tight")
-
-
-
-###############################################################################3
+PyPlot.savefig("tau1_PDE.pdf",transparent = "true",bbox_inches="tight")
+##############################3
 
 figure()
-Data = load(string(path,15, "_v13_res2.0.jld2"))["data"]
+Data = load(string(path,17, "_v12_res_tau=2.0_lat.jld2"))["data"]
 plotter(Data,path,"s",(255, 89, 72)./255)
 
-Data = load(string(path,15, "_v13_res2.0_tent.jld2"))["data"]
+Data = load(string(path,17, "_v12_res_tau=2.0_lat_tent.jld2"))["data"]
 plotter(Data,path,"D",(255, 122, 40)./255)
 
-Data = load(string(path,16, "_v13_res2.0_sob.jld2"))["data"]
+Data = load(string(path,18, "_v12_res_tau=2.0_sob.jld2"))["data"]
 plotter(Data,path,"^",(67, 133, 255)./255)
 
-Data = load(string(path,16, "_v13_res2.0_sob2.jld2"))["data"]
+Data = load(string(path,18, "_v12_res_tau=2.0_sob2.jld2"))["data"]
 plotter(Data,path,"o",(0, 179, 89)./255)
 nbOfSamples = Data[11]
 s = Data[9]
@@ -141,36 +122,21 @@ legend((
 "Sobol' Factor 2 Interlacing",
 "N^-1",
 "N^-2",
-"QMC std",
 ),fontsize=12)
 str = string(
 "s = ",
 s,
 ", shift = ",
 M,
-", domain = ",
-"[",-2.0,",",2.0,"]"
+", τ = ",
+"2.0"
 )
 sz = 15
 title(str,fontsize=sz)
-PyPlot.savefig("20.pdf",transparent = "true",bbox_inches="tight")
 
 #  end
 
-###########################################################################################
 
-figure()
-Data = load(string(path,15, "_v13_res3.0.jld2"))["data"]
-plotter(Data,path,"s",(255, 89, 72)./255)
-
-Data = load(string(path,15, "_v13_res3.0_tent.jld2"))["data"]
-plotter(Data,path,"D",(255, 122, 40)./255)
-
-Data = load(string(path,16, "_v13_res3.0_sob.jld2"))["data"]
-plotter(Data,path,"^",(67, 133, 255)./255)
-
-Data = load(string(path,16, "_v13_res3.0_sob2.jld2"))["data"]
-plotter(Data,path,"o",(0, 179, 89)./255)
 nbOfSamples = Data[11]
 s = Data[9]
 M = Data[10]
@@ -186,15 +152,14 @@ legend((
 "Sobol' Factor 2 Interlacing",
 "N^-1",
 "N^-2",
-"QMC std",
 ),fontsize=12)
 str = string(
 "s = ",
 s,
 ", shift = ",
 M,
-", domain = ",
-"[",-3.0,",",3.0,"]"
+", τ = ",
+"2.0"
 )
 sz = 15
 title(str,fontsize=sz)
@@ -204,22 +169,21 @@ ax[:yaxis][:set_ticks_position]("right")
 ax[:yaxis][:set_label_position]("right")
 plt.yticks(fontsize=sz)
 
-PyPlot.savefig("30.pdf",transparent = "true",bbox_inches="tight")
-###############################
+PyPlot.savefig("tau2_PDE.pdf",transparent = "true",bbox_inches="tight")
 
-
+##############
 
 figure()
-Data = load(string(path,15, "_v13_res4.0.jld2"))["data"]
+Data = load(string(path,17, "_v12_res_tau=3.0_lat.jld2"))["data"]
 plotter(Data,path,"s",(255, 89, 72)./255)
 
-Data = load(string(path,15, "_v13_res4.0_tent.jld2"))["data"]
+Data = load(string(path,17, "_v12_res_tau=3.0_lat_tent.jld2"))["data"]
 plotter(Data,path,"D",(255, 122, 40)./255)
 
-Data = load(string(path,16, "_v13_res4.0_sob.jld2"))["data"]
+Data = load(string(path,18, "_v12_res_tau=3.0_sob.jld2"))["data"]
 plotter(Data,path,"^",(67, 133, 255)./255)
 
-Data = load(string(path,16, "_v13_res4.0_sob2.jld2"))["data"]
+Data = load(string(path,18, "_v12_res_tau=3.0_sob2.jld2"))["data"]
 plotter(Data,path,"o",(0, 179, 89)./255)
 nbOfSamples = Data[11]
 s = Data[9]
@@ -236,35 +200,69 @@ legend((
 "Sobol' Factor 2 Interlacing",
 "N^-1",
 "N^-2",
-"QMC std",
 ),fontsize=12)
 str = string(
 "s = ",
 s,
 ", shift = ",
 M,
-", domain = ",
-"[",-4.0,",",4.0,"]"
+", τ = ",
+"3.0"
 )
 sz = 15
 title(str,fontsize=sz)
-PyPlot.savefig("40.pdf",transparent = "true",bbox_inches="tight")
 
 #  end
 
-###########################################################################################
+
+nbOfSamples = Data[11]
+s = Data[9]
+M = Data[10]
+
+loglog(nbOfSamples, nbOfSamples .^ -1, "--b")
+loglog(nbOfSamples, nbOfSamples .^ -2, "--r")
+
+
+legend((
+"rank-1 Lattice",
+"Tent transformed rank-1 lattice",
+"Sobol'",
+"Sobol' Factor 2 Interlacing",
+"N^-1",
+"N^-2",
+),fontsize=12)
+str = string(
+"s = ",
+s,
+", shift = ",
+M,
+", τ = ",
+"3.0"
+)
+sz = 15
+title(str,fontsize=sz)
+ax = gca()
+
+ax[:yaxis][:set_ticks_position]("left")
+ax[:yaxis][:set_label_position]("left")
+plt.yticks(fontsize=sz)
+
+PyPlot.savefig("tau3_PDE.pdf",transparent = "true",bbox_inches="tight")
+
+
+##############
 
 figure()
-Data = load(string(path,15, "_v13_res5.0.jld2"))["data"]
+Data = load(string(path,17, "_v12_res_tau=4.0_lat.jld2"))["data"]
 plotter(Data,path,"s",(255, 89, 72)./255)
 
-Data = load(string(path,15, "_v13_res5.0_tent.jld2"))["data"]
+Data = load(string(path,17, "_v12_res_tau=4.0_lat_tent.jld2"))["data"]
 plotter(Data,path,"D",(255, 122, 40)./255)
 
-Data = load(string(path,16, "_v13_res5.0_sob.jld2"))["data"]
+Data = load(string(path,18, "_v12_res_tau=4.0_sob.jld2"))["data"]
 plotter(Data,path,"^",(67, 133, 255)./255)
 
-Data = load(string(path,16, "_v13_res5.0_sob2.jld2"))["data"]
+Data = load(string(path,18, "_v12_res_tau=4.0_sob2.jld2"))["data"]
 plotter(Data,path,"o",(0, 179, 89)./255)
 nbOfSamples = Data[11]
 s = Data[9]
@@ -281,15 +279,44 @@ legend((
 "Sobol' Factor 2 Interlacing",
 "N^-1",
 "N^-2",
-"QMC std",
 ),fontsize=12)
 str = string(
 "s = ",
 s,
 ", shift = ",
 M,
-", domain = ",
-"[",-5.0,",",5.0,"]"
+", τ = ",
+"4.0"
+)
+sz = 15
+title(str,fontsize=sz)
+
+#  end
+
+
+nbOfSamples = Data[11]
+s = Data[9]
+M = Data[10]
+
+loglog(nbOfSamples, nbOfSamples .^ -1, "--b")
+loglog(nbOfSamples, nbOfSamples .^ -2, "--r")
+
+
+legend((
+"rank-1 Lattice",
+"Tent transformed rank-1 lattice",
+"Sobol'",
+"Sobol' Factor 2 Interlacing",
+"N^-1",
+"N^-2",
+),fontsize=12)
+str = string(
+"s = ",
+s,
+", shift = ",
+M,
+", τ = ",
+"4.0"
 )
 sz = 15
 title(str,fontsize=sz)
@@ -299,7 +326,7 @@ ax[:yaxis][:set_ticks_position]("right")
 ax[:yaxis][:set_label_position]("right")
 plt.yticks(fontsize=sz)
 
-PyPlot.savefig("50.pdf",transparent = "true",bbox_inches="tight")
+PyPlot.savefig("tau4_PDE.pdf",transparent = "true",bbox_inches="tight")
 
 #  end
 

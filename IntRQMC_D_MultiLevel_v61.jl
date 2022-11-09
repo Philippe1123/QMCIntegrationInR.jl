@@ -35,9 +35,9 @@ analytical_sol(a::Real, s::Int64, sigma::Real) =
     function main()
 
         #### Input parameters
-        M = 64 # number of shifts
-        N_lattice = 2 .^ collect(4:1:20)
-        N_net = 2 .^ collect(4:1:20)
+        M = 32 # number of shifts
+        N_lattice = 2 .^ collect(4:1:10)
+        N_net = 2 .^ collect(4:1:10)
 
 
         #  generator = DigitalNet64InterlacedTwo(s)
@@ -49,7 +49,7 @@ analytical_sol(a::Real, s::Int64, sigma::Real) =
 
 
         # dim = 1
-        a_param_vec = 1.0:1.0:10.0
+        a_param_vec = 4.0:1.0:4.0
         for a_param in a_param_vec
             """
         s = 1
@@ -172,7 +172,7 @@ analytical_sol(a::Real, s::Int64, sigma::Real) =
 
         Data = RunSimulation(s, M, N_net, 2, 1.6, a_param,DigitalNet64InterlacedTwo(s),true)
         writeOut(Data, "16_Inv")
-"""
+        """
         Data = RunSimulation(
             s,
             M,
@@ -182,12 +182,15 @@ analytical_sol(a::Real, s::Int64, sigma::Real) =
             a_param,
             LatticeRule(vec(UInt32.(readdlm("exew_base2_m20_a3_HKKN.txt"))), s),true
         )
-        writeOut(Data, string("17_v61_res_",a_param))
-"""
-        Data = RunSimulation(s, M, N_net, 3, 2.6, a_param,DigitalNet64InterlacedThree(s),true)
-        writeOut(Data, "18_Inv")
-"""
+        writeOut(Data, string("17_v61_res_tau",a_param,"_lat"))
+        
+        Data = RunSimulation(s, M, N_net, 3, 2.6, a_param,DigitalNet64InterlacedTwo(s),true)
+        writeOut(Data, string("18_v61_res_tau=",a_param,"_sob2"))
 
+        Data = RunSimulation(s, M, N_net, 3, 2.6, a_param,DigitalNet64(s),true)
+        writeOut(Data, string("18_v61_res_tau=",a_param,"_sob"))
+
+        
         end
     end # end of function main()
 
@@ -245,7 +248,8 @@ function RunSimulation(
     exactSol = 0
     shiftAverages = zeros(M, length(N))
 
-    f(x, params, a) = prod((1 .+ abs.(a*x) .^ params) .* a .* exp.(-x.^2 ./ 2 .* (a^2-1)), dims = 1)
+    #f(x, params, a,s) = prod((1 .+ abs.(a*x) .^ params) .* a .* exp.(-x.^2 ./ 2 .* (a^2-1)), dims = 1)
+    f(x, params, a,s) = a^s*prod((1 .+ abs.(a*x) .^ params)  .* exp.(-x.^2 ./ 2 .* (a^2-1)), dims = 1)
 
 
     # why do these two variables need to be declared here? can't we rewrite the logic?
@@ -275,7 +279,7 @@ function RunSimulation(
 
             # We first generate *all* the points for all the shifts...
 #            BoxBoundary = sqrt(2 * alpha * log(2^30))
-            BoxBoundary = 20
+            BoxBoundary = 10^10
 
             boundsOfBoxes[idx] = BoxBoundary
 
@@ -284,13 +288,15 @@ function RunSimulation(
                 shiftedQMCGenerator = randomizedGenerator(QMCGenerator)
 
                 for id = 1:numberOfPointsBox
-                    pointsBox[:, id, shiftId] =
-                        map.(
-                            x -> Φ⁻¹(
-                                Φ(-BoxBoundary,1) + (Φ(BoxBoundary,1) - Φ(-BoxBoundary,1)) * x,1.
-                            ),
-                            shiftedQMCGenerator[id-1],
-                        )
+            ####################################
+                out=shiftedQMCGenerator[id-1]
+                # out=ones(length(out),1)-abs.(2*out.-1)
+            ##############################################################tent transformation
+                pointsBox[:, id, shiftId] =
+                 map.(x -> Φ⁻¹(
+             Φ(-BoxBoundary) + (Φ(BoxBoundary) - Φ(-BoxBoundary)) * x),
+             out,
+         )
                         pointsBox_unmapped[:, id, shiftId]=shiftedQMCGenerator[id-1]
 
 
@@ -301,7 +307,7 @@ function RunSimulation(
 
 
             # pointsBox is s-by-N-by-M --f--> 1-by-N-by-M
-            G_fine = mean(f(pointsBox,params,a), dims = 2) # 1-by-1-by-M
+            G_fine = mean(f(pointsBox,params,a,s), dims = 2) # 1-by-1-by-M
 #            pointsBox = 0
             GC.gc()
 

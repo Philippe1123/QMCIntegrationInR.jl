@@ -1,0 +1,10 @@
+
+ax = gca()
+ax[:yaxis][:set_ticks_position]("right")
+ax[:yaxis][:set_label_position]("right")
+title("huge as fuck",fontsize = 30)
+xlabel("test",fontsize=20)
+ylabel("test",fontsize=20)
+plt.xticks(fontsize=30)
+plt.yticks(fontsize=30)
+legend("test",fontsize=30)
